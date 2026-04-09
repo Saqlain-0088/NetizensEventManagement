@@ -1,0 +1,310 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEvents } from "@/context/EventContext";
+import { useMasterData } from "@/context/MasterDataContext";
+import { useToast } from "@/hooks/use-toast";
+import type { EventStatus } from "@/data/mockEvents";
+import SmartDropdown from "@/components/enquiry/SmartDropdown";
+import SummaryPanel from "@/components/enquiry/SummaryPanel";
+import ServiceMenuBuilder from "@/components/enquiry/ServiceMenuBuilder";
+import {
+  CalendarDays,
+  User,
+  Clock,
+  FileText,
+  Sparkles,
+  CheckCircle2,
+  ArrowLeft,
+  Building2,
+} from "lucide-react";
+
+interface ServiceEntry {
+  name: string;
+  time: string;
+  menuItems: string[];
+}
+
+const AddEnquiry = () => {
+  const navigate = useNavigate();
+  const { addEvent } = useEvents();
+  const { occasions, staff, addOccasion, removeOccasion, addStaff, removeStaff, incrementUsage } = useMasterData();
+  const { toast } = useToast();
+
+  const [form, setForm] = useState({
+    title: "",
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    occasion: "",
+    hallName: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    pax: "",
+    ratePerPerson: "",
+    advanceAmount: "",
+    taxPercent: "18",
+    status: "tentative" as EventStatus,
+    assignedStaff: "",
+    notes: "",
+  });
+
+  const [services, setServices] = useState<ServiceEntry[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const update = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.title.trim()) e.title = "Event title is required";
+    if (!form.customerName.trim()) e.customerName = "Customer name is required";
+    if (!form.date) e.date = "Date is required";
+    if (!form.pax) e.pax = "Guest count is required";
+    if (form.startTime && form.endTime && form.startTime >= form.endTime)
+      e.endTime = "End time must be after start time";
+    if (form.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail))
+      e.customerEmail = "Invalid email address";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) {
+      toast({ title: "Please fix the errors", description: "Some required fields are missing or invalid.", variant: "destructive" });
+      return;
+    }
+
+    const selectedOccasion = occasions.find((o) => o.name === form.occasion);
+    if (selectedOccasion) incrementUsage("occasion", selectedOccasion.id);
+    const selectedStaff = staff.find((s) => s.name === form.assignedStaff);
+    if (selectedStaff) incrementUsage("staff", selectedStaff.id);
+
+    const eventServices = services.filter((s) => s.name.trim()).map((s) => ({ name: s.name, time: s.time }));
+    const menuItems: Record<string, string[]> = {};
+    services.forEach((s) => {
+      if (s.name && s.menuItems.length > 0) menuItems[s.name] = s.menuItems;
+    });
+
+    addEvent({
+      id: crypto.randomUUID(),
+      title: form.title,
+      customerName: form.customerName,
+      customerPhone: form.customerPhone,
+      customerEmail: form.customerEmail || undefined,
+      occasion: form.occasion,
+      hallName: form.hallName,
+      date: form.date,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      pax: Number(form.pax),
+      ratePerPerson: Number(form.ratePerPerson),
+      advanceAmount: form.advanceAmount ? Number(form.advanceAmount) : undefined,
+      taxPercent: form.taxPercent ? Number(form.taxPercent) : undefined,
+      services: eventServices,
+      menuItems,
+      status: form.status,
+      assignedStaff: form.assignedStaff || undefined,
+      notes: form.notes || undefined,
+      rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}\nRATE: ${form.ratePerPerson}\nTIME: ${form.startTime} – ${form.endTime}`,
+    });
+
+    toast({ title: "Enquiry created!", description: "The event has been saved successfully." });
+    navigate("/events");
+  };
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      {/* Page Header */}
+      <div className="mb-7">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center glow-primary">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">New Enquiry</h1>
+            <p className="text-sm text-muted-foreground">Fill in the details to create a new event</p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Event Details */}
+        <FormSection icon={CalendarDays} title="Event Details" iconBg="bg-violet-100" iconColor="text-violet-600">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Event Title" value={form.title} onChange={(v) => update("title", v)} placeholder="e.g. Shah Corporate Lunch" required error={errors.title} />
+            <SmartDropdown
+              label="Occasion" items={occasions} value={form.occasion}
+              onChange={(v) => update("occasion", v)} onAdd={addOccasion}
+              onRemove={removeOccasion} placeholder="Search or select occasion..."
+            />
+            <Field label="Hall / Venue" value={form.hallName} onChange={(v) => update("hallName", v)} placeholder="e.g. Grand Ballroom" />
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-foreground">Status</Label>
+              <Select value={form.status} onValueChange={(v) => update("status", v)}>
+                <SelectTrigger className="bg-white border-border h-10 text-foreground focus:ring-primary/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-border shadow-lg">
+                  <SelectItem value="tentative" className="text-amber-700 focus:bg-amber-50 focus:text-amber-800">🟡 Tentative</SelectItem>
+                  <SelectItem value="confirmed" className="text-emerald-700 focus:bg-emerald-50 focus:text-emerald-800">🟢 Confirmed</SelectItem>
+                  <SelectItem value="cancelled" className="text-red-700 focus:bg-red-50 focus:text-red-800">🔴 Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </FormSection>
+
+        {/* Customer Details */}
+        <FormSection icon={User} title="Customer Details" iconBg="bg-blue-100" iconColor="text-blue-600">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Customer Name" value={form.customerName} onChange={(v) => update("customerName", v)} placeholder="e.g. Rahul Shah" required error={errors.customerName} />
+            <Field label="Phone Number" value={form.customerPhone} onChange={(v) => update("customerPhone", v)} placeholder="+91 98765 43210" />
+            <Field label="Email Address" value={form.customerEmail} onChange={(v) => update("customerEmail", v)} placeholder="email@example.com" type="email" error={errors.customerEmail} />
+            <SmartDropdown
+              label="Assigned Staff" items={staff} value={form.assignedStaff}
+              onChange={(v) => update("assignedStaff", v)} onAdd={addStaff}
+              onRemove={removeStaff} placeholder="Search or select staff..."
+            />
+          </div>
+        </FormSection>
+
+        {/* Schedule & Pricing */}
+        <FormSection icon={Clock} title="Schedule & Pricing" iconBg="bg-amber-100" iconColor="text-amber-600">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field label="Event Date" value={form.date} onChange={(v) => update("date", v)} type="date" required error={errors.date} />
+            <Field label="Start Time" value={form.startTime} onChange={(v) => update("startTime", v)} type="time" />
+            <Field label="End Time" value={form.endTime} onChange={(v) => update("endTime", v)} type="time" error={errors.endTime} />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <Field label="PAX (Guests)" value={form.pax} onChange={(v) => update("pax", v)} type="number" placeholder="50" required error={errors.pax} />
+            <Field label="Rate / Person (₹)" value={form.ratePerPerson} onChange={(v) => update("ratePerPerson", v)} type="number" placeholder="600" />
+            <Field label="Advance (₹)" value={form.advanceAmount} onChange={(v) => update("advanceAmount", v)} type="number" placeholder="10000" />
+            <Field label="Tax %" value={form.taxPercent} onChange={(v) => update("taxPercent", v)} type="number" placeholder="18" />
+          </div>
+        </FormSection>
+
+        {/* Live Summary */}
+        <SummaryPanel
+          pax={Number(form.pax) || 0}
+          ratePerPerson={Number(form.ratePerPerson) || 0}
+          taxPercent={Number(form.taxPercent) || 0}
+          advanceAmount={Number(form.advanceAmount) || 0}
+        />
+
+        {/* Services & Menu */}
+        <ServiceMenuBuilder
+          services={services}
+          onChange={setServices}
+          startTime={form.startTime}
+          endTime={form.endTime}
+          pax={Number(form.pax) || 0}
+        />
+
+        {/* Notes */}
+        <FormSection icon={FileText} title="Additional Notes" iconBg="bg-slate-100" iconColor="text-slate-500">
+          <Textarea
+            value={form.notes}
+            onChange={(e) => update("notes", e.target.value)}
+            placeholder="Any special requirements, dietary restrictions, or additional notes..."
+            rows={3}
+            className="bg-white border-border focus:ring-primary/30 resize-none text-foreground"
+          />
+        </FormSection>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-2 pb-8">
+          <Button
+            type="submit"
+            className="gradient-primary text-white border-0 shadow-md glow-primary hover:opacity-90 gap-2 px-8"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Create Enquiry
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(-1)}
+            className="border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const FormSection = ({
+  icon: Icon,
+  title,
+  iconBg,
+  iconColor,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  iconBg: string;
+  iconColor: string;
+  children: React.ReactNode;
+}) => (
+  <section className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
+    <div className="px-5 py-3.5 border-b border-border bg-muted/40 flex items-center gap-2.5">
+      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconBg}`}>
+        <Icon className={`w-3.5 h-3.5 ${iconColor}`} />
+      </div>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+    </div>
+    <div className="p-5">{children}</div>
+  </section>
+);
+
+const Field = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  required,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  required?: boolean;
+  error?: string;
+}) => (
+  <div className="space-y-1.5">
+    <Label className="text-sm font-medium text-foreground">
+      {label} {required && <span className="text-red-500">*</span>}
+    </Label>
+    <Input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`bg-white border-border h-10 text-foreground placeholder:text-muted-foreground focus:ring-primary/30 transition-colors ${
+        error ? "border-red-400 focus:border-red-400" : ""
+      }`}
+    />
+    {error && <p className="text-xs text-red-500">{error}</p>}
+  </div>
+);
+
+export default AddEnquiry;
