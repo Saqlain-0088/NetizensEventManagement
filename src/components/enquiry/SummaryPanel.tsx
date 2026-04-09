@@ -6,16 +6,17 @@ interface SummaryPanelProps {
   ratePerPerson: number;
   taxPercent: number;
   advanceAmount: number;
+  extrasTotal?: number;
 }
 
-const SummaryPanel = ({ pax, ratePerPerson, taxPercent, advanceAmount }: SummaryPanelProps) => {
+const SummaryPanel = ({ pax, ratePerPerson, taxPercent, advanceAmount, extrasTotal = 0 }: SummaryPanelProps) => {
   const calc = useMemo(() => {
     const subtotal = pax * ratePerPerson;
     const taxAmount = subtotal * (taxPercent / 100);
-    const total = subtotal + taxAmount;
+    const total = subtotal + taxAmount + extrasTotal;
     const balance = total - advanceAmount;
     return { subtotal, taxAmount, total, balance };
-  }, [pax, ratePerPerson, taxPercent, advanceAmount]);
+  }, [pax, ratePerPerson, taxPercent, advanceAmount, extrasTotal]);
 
   const anomalies: string[] = [];
   if (ratePerPerson > 0 && ratePerPerson < 200) anomalies.push("Rate per person seems unusually low");
@@ -41,6 +42,7 @@ const SummaryPanel = ({ pax, ratePerPerson, taxPercent, advanceAmount }: Summary
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <SummaryItem label="Subtotal" value={calc.subtotal} />
           <SummaryItem label={`Tax (${taxPercent}%)`} value={calc.taxAmount} />
+          {extrasTotal > 0 && <SummaryItem label="Extras" value={extrasTotal} />}
           <SummaryItem label="Grand Total" value={calc.total} highlight />
           <SummaryItem label="Balance Due" value={calc.balance} highlight={calc.balance > 0} negative={calc.balance < 0} />
         </div>

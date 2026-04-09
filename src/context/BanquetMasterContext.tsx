@@ -1,0 +1,202 @@
+import { createContext, useContext, useState, ReactNode } from "react";
+
+// ── Hall / Venue ──────────────────────────────────────────────────────────────
+export interface Hall {
+  id: string;
+  name: string;
+  capacityMin: number;
+  capacityMax: number;
+  size: string;          // e.g. "41x50 ft"
+  baseRent: number;
+  active: boolean;
+  featured: boolean;
+  usageCount: number;
+}
+
+// ── Package ───────────────────────────────────────────────────────────────────
+export type PackageTimeType = "high-tea" | "lunch" | "dinner" | "conference" | "custom";
+
+export interface Package {
+  id: string;
+  name: string;
+  pricePerPerson: number;
+  timeType: PackageTimeType;
+  includedItems: string[];   // menu item names
+  active: boolean;
+  featured: boolean;
+  usageCount: number;
+}
+
+// ── Extra Service ─────────────────────────────────────────────────────────────
+export type ExtraType = "food" | "equipment";
+
+export interface ExtraService {
+  id: string;
+  name: string;
+  type: ExtraType;
+  price: number;
+  active: boolean;
+  featured: boolean;
+  usageCount: number;
+}
+
+// ── Context type ──────────────────────────────────────────────────────────────
+interface BanquetMasterContextType {
+  halls: Hall[];
+  packages: Package[];
+  extras: ExtraService[];
+
+  // Hall CRUD
+  addHall: (h: Omit<Hall, "id" | "usageCount">) => void;
+  updateHall: (id: string, h: Partial<Hall>) => void;
+  deleteHall: (id: string) => void;
+  toggleHall: (id: string, field: "active" | "featured") => void;
+
+  // Package CRUD
+  addPackage: (p: Omit<Package, "id" | "usageCount">) => void;
+  updatePackage: (id: string, p: Partial<Package>) => void;
+  deletePackage: (id: string) => void;
+  togglePackage: (id: string, field: "active" | "featured") => void;
+
+  // Extra CRUD
+  addExtra: (e: Omit<ExtraService, "id" | "usageCount">) => void;
+  updateExtra: (id: string, e: Partial<ExtraService>) => void;
+  deleteExtra: (id: string) => void;
+  toggleExtra: (id: string, field: "active" | "featured") => void;
+
+  // AI helpers
+  suggestPackages: (pax: number, occasion: string, budget: number) => Package[];
+  suggestHall: (pax: number) => Hall | null;
+}
+
+const BanquetMasterContext = createContext<BanquetMasterContextType | undefined>(undefined);
+
+// ── Seed data (from PDF) ──────────────────────────────────────────────────────
+const defaultHalls: Hall[] = [
+  { id: "h1", name: "THE PALACE",  capacityMin: 80,  capacityMax: 220, size: "41x50 ft", baseRent: 0, active: true,  featured: true,  usageCount: 18 },
+  { id: "h2", name: "RAJBHAVAN",   capacityMin: 50,  capacityMax: 120, size: "30x50 ft", baseRent: 0, active: true,  featured: false, usageCount: 12 },
+  { id: "h3", name: "OCEAN",       capacityMin: 80,  capacityMax: 220, size: "41x50 ft", baseRent: 0, active: true,  featured: false, usageCount: 9  },
+];
+
+const defaultPackages: Package[] = [
+  {
+    id: "pkg1", name: "Package 1 – High Tea", pricePerPerson: 380, timeType: "high-tea",
+    includedItems: ["Tea", "Coffee", "Cookies", "Sandwich", "Hot Snacks", "Mineral Water", "Mukhvas"],
+    active: true, featured: true, usageCount: 22,
+  },
+  {
+    id: "pkg2", name: "Package 2", pricePerPerson: 490, timeType: "lunch",
+    includedItems: ["Tea", "Coffee", "Cookies", "Sandwich", "Hot Snacks", "Paneer Sabji", "Butter Roti", "Dal Rice", "Mineral Water", "Mukhvas"],
+    active: true, featured: false, usageCount: 15,
+  },
+  {
+    id: "pkg3", name: "Package 3", pricePerPerson: 590, timeType: "lunch",
+    includedItems: ["Tea", "Coffee", "Cookies", "Sandwich", "Hot Snacks", "Paneer Sabji", "Veg Sabji", "Butter Roti", "Dal Rice", "Ice Cream", "Mineral Water", "Mukhvas"],
+    active: true, featured: false, usageCount: 11,
+  },
+  {
+    id: "pkg4", name: "Package 4", pricePerPerson: 640, timeType: "dinner",
+    includedItems: ["Tea", "Coffee", "Cookies", "Sandwich", "Hot Snacks", "Paneer Sabji", "Veg Sabji", "Butter Roti", "Dal Rice", "Sweet", "Fruits", "Mineral Water", "Mukhvas"],
+    active: true, featured: false, usageCount: 8,
+  },
+  {
+    id: "pkg5", name: "Package 5 – Conference", pricePerPerson: 990, timeType: "conference",
+    includedItems: ["Tea", "Coffee", "Cookies", "Sandwich", "Hot Snacks", "Paneer Sabji", "Veg Sabji", "Butter Roti", "Dal Rice", "Ice Cream", "Sweet", "Fruits", "Mineral Water", "Mukhvas"],
+    active: true, featured: true, usageCount: 6,
+  },
+];
+
+const defaultExtras: ExtraService[] = [
+  { id: "ex1",  name: "Welcome Drink",  type: "food",      price: 50,   active: true,  featured: true,  usageCount: 14 },
+  { id: "ex2",  name: "Soup",           type: "food",      price: 50,   active: true,  featured: false, usageCount: 8  },
+  { id: "ex3",  name: "Starter",        type: "food",      price: 90,   active: true,  featured: true,  usageCount: 12 },
+  { id: "ex4",  name: "Main Course",    type: "food",      price: 90,   active: true,  featured: false, usageCount: 10 },
+  { id: "ex5",  name: "Live Counter",   type: "food",      price: 120,  active: true,  featured: false, usageCount: 5  },
+  { id: "ex6",  name: "Butter Milk / Curd", type: "food", price: 50,   active: true,  featured: false, usageCount: 7  },
+  { id: "ex7",  name: "Sweet",          type: "food",      price: 100,  active: true,  featured: false, usageCount: 9  },
+  { id: "ex8",  name: "Tea / Coffee",   type: "food",      price: 50,   active: true,  featured: false, usageCount: 11 },
+  { id: "ex9",  name: "Cookies",        type: "food",      price: 40,   active: true,  featured: false, usageCount: 6  },
+  { id: "ex10", name: "Ice Cream",      type: "food",      price: 50,   active: true,  featured: false, usageCount: 8  },
+  { id: "ex11", name: "Mic & Sound",    type: "equipment", price: 2000, active: true,  featured: true,  usageCount: 10 },
+  { id: "ex12", name: "LED Wall",       type: "equipment", price: 3000, active: true,  featured: false, usageCount: 4  },
+  { id: "ex13", name: "Stage",          type: "equipment", price: 4000, active: true,  featured: false, usageCount: 3  },
+  { id: "ex14", name: "Table",          type: "equipment", price: 200,  active: true,  featured: false, usageCount: 7  },
+  { id: "ex15", name: "Round Table",    type: "equipment", price: 400,  active: true,  featured: false, usageCount: 5  },
+  { id: "ex16", name: "DJ",             type: "equipment", price: 6000, active: true,  featured: true,  usageCount: 6  },
+  { id: "ex17", name: "Sound Operator", type: "equipment", price: 500,  active: true,  featured: false, usageCount: 4  },
+];
+
+// ── Provider ──────────────────────────────────────────────────────────────────
+export const BanquetMasterProvider = ({ children }: { children: ReactNode }) => {
+  const [halls, setHalls] = useState<Hall[]>(defaultHalls);
+  const [packages, setPackages] = useState<Package[]>(defaultPackages);
+  const [extras, setExtras] = useState<ExtraService[]>(defaultExtras);
+
+  // Hall
+  const addHall = (h: Omit<Hall, "id" | "usageCount">) =>
+    setHalls((p) => [...p, { ...h, id: crypto.randomUUID(), usageCount: 0 }]);
+  const updateHall = (id: string, h: Partial<Hall>) =>
+    setHalls((p) => p.map((x) => (x.id === id ? { ...x, ...h } : x)));
+  const deleteHall = (id: string) => setHalls((p) => p.filter((x) => x.id !== id));
+  const toggleHall = (id: string, field: "active" | "featured") =>
+    setHalls((p) => p.map((x) => (x.id === id ? { ...x, [field]: !x[field] } : x)));
+
+  // Package
+  const addPackage = (pkg: Omit<Package, "id" | "usageCount">) =>
+    setPackages((p) => [...p, { ...pkg, id: crypto.randomUUID(), usageCount: 0 }]);
+  const updatePackage = (id: string, pkg: Partial<Package>) =>
+    setPackages((p) => p.map((x) => (x.id === id ? { ...x, ...pkg } : x)));
+  const deletePackage = (id: string) => setPackages((p) => p.filter((x) => x.id !== id));
+  const togglePackage = (id: string, field: "active" | "featured") =>
+    setPackages((p) => p.map((x) => (x.id === id ? { ...x, [field]: !x[field] } : x)));
+
+  // Extra
+  const addExtra = (e: Omit<ExtraService, "id" | "usageCount">) =>
+    setExtras((p) => [...p, { ...e, id: crypto.randomUUID(), usageCount: 0 }]);
+  const updateExtra = (id: string, e: Partial<ExtraService>) =>
+    setExtras((p) => p.map((x) => (x.id === id ? { ...x, ...e } : x)));
+  const deleteExtra = (id: string) => setExtras((p) => p.filter((x) => x.id !== id));
+  const toggleExtra = (id: string, field: "active" | "featured") =>
+    setExtras((p) => p.map((x) => (x.id === id ? { ...x, [field]: !x[field] } : x)));
+
+  // AI: suggest packages based on pax, occasion, budget
+  const suggestPackages = (pax: number, occasion: string, budget: number): Package[] => {
+    const occ = occasion.toLowerCase();
+    return packages
+      .filter((p) => p.active)
+      .filter((p) => budget === 0 || p.pricePerPerson <= budget)
+      .filter((p) => {
+        if (occ.includes("conference")) return p.timeType === "conference";
+        if (occ.includes("wedding") || occ.includes("reception")) return p.pricePerPerson >= 490;
+        return true;
+      })
+      .sort((a, b) => b.usageCount - a.usageCount)
+      .slice(0, 3);
+  };
+
+  // AI: suggest hall based on pax
+  const suggestHall = (pax: number): Hall | null => {
+    const suitable = halls
+      .filter((h) => h.active && pax >= h.capacityMin && pax <= h.capacityMax)
+      .sort((a, b) => b.usageCount - a.usageCount);
+    return suitable[0] ?? null;
+  };
+
+  return (
+    <BanquetMasterContext.Provider value={{
+      halls, packages, extras,
+      addHall, updateHall, deleteHall, toggleHall,
+      addPackage, updatePackage, deletePackage, togglePackage,
+      addExtra, updateExtra, deleteExtra, toggleExtra,
+      suggestPackages, suggestHall,
+    }}>
+      {children}
+    </BanquetMasterContext.Provider>
+  );
+};
+
+export const useBanquetMaster = () => {
+  const ctx = useContext(BanquetMasterContext);
+  if (!ctx) throw new Error("useBanquetMaster must be used within BanquetMasterProvider");
+  return ctx;
+};

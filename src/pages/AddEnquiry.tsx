@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,60 +7,75 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEvents } from "@/context/EventContext";
 import { useMasterData } from "@/context/MasterDataContext";
+import { useBanquetMaster } from "@/context/BanquetMasterContext";
 import { useToast } from "@/hooks/use-toast";
 import type { EventStatus } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
 import SummaryPanel from "@/components/enquiry/SummaryPanel";
 import ServiceMenuBuilder from "@/components/enquiry/ServiceMenuBuilder";
 import {
-  CalendarDays,
-  User,
-  Clock,
-  FileText,
-  Sparkles,
-  CheckCircle2,
-  ArrowLeft,
-  Building2,
+  CalendarDays, User, Clock, FileText, Sparkles,
+  CheckCircle2, ArrowLeft, Package, Building2, Plus, X,
 } from "lucide-react";
 
-interface ServiceEntry {
-  name: string;
-  time: string;
-  menuItems: string[];
-}
+interface ServiceEntry { name: string; time: string; menuItems: string[]; }
 
 const AddEnquiry = () => {
   const navigate = useNavigate();
   const { addEvent } = useEvents();
   const { occasions, staff, addOccasion, removeOccasion, addStaff, removeStaff, incrementUsage } = useMasterData();
+  const { packages, halls, extras, suggestPackages, suggestHall } = useBanquetMaster();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
-    title: "",
-    customerName: "",
-    customerPhone: "",
-    customerEmail: "",
-    occasion: "",
-    hallName: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    pax: "",
-    ratePerPerson: "",
-    advanceAmount: "",
-    taxPercent: "18",
-    status: "tentative" as EventStatus,
-    assignedStaff: "",
-    notes: "",
+    title: "", customerName: "", customerPhone: "", customerEmail: "",
+    occasion: "", hallName: "", date: "", startTime: "", endTime: "",
+    pax: "", ratePerPerson: "", advanceAmount: "", taxPercent: "18",
+    status: "tentative" as EventStatus, assignedStaff: "", notes: "",
   });
-
   const [services, setServices] = useState<ServiceEntry[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [suggestedPkgs, setSuggestedPkgs] = useState<typeof packages>([]);
 
   const update = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    setForm((p) => ({ ...p, [field]: value }));
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: "" }));
   };
+
+  // Auto-suggest packages when occasion/pax/rate changes
+  useEffect(() => {
+    if (form.occasion || form.pax) {
+      const budget = Number(form.ratePerPerson) || 0;
+      setSuggestedPkgs(suggestPackages(Number(form.pax) || 0, form.occasion, budget));
+    }
+  }, [form.occasion, form.pax, form.ratePerPerson]);
+
+  // Auto-suggest hall when pax changes
+  useEffect(() => {
+    const pax = Number(form.pax);
+    if (pax > 0 && !form.hallName) {
+      const hall = suggestHall(pax);
+      if (hall) update("hallName", hall.name);
+    }
+  }, [form.pax]);
+
+  // Apply a package — auto-fill rate and services
+  const applyPackage = (pkg: typeof packages[0]) => {
+    update("ratePerPerson", String(pkg.pricePerPerson));
+    const timeMap: Record<string, string> = {
+      "high-tea": "16:00", lunch: "12:30", dinner: "20:00", conference: "10:00", custom: "",
+    };
+    setServices([{ name: pkg.name, time: timeMap[pkg.timeType] || "", menuItems: pkg.includedItems }]);
+    toast({ title: `Package applied: ${pkg.name}`, description: `₹${pkg.pricePerPerson}/person · ${pkg.includedItems.length} items auto-filled` });
+  };
+
+  const toggleExtra = (name: string) =>
+    setSelectedExtras((p) => p.includes(name) ? p.filter((x) => x !== name) : [...p, name]);
+
+  const extrasTotal = extras
+    .filter((e) => selectedExtras.includes(e.name))
+    .reduce((s, e) => s + e.price, 0);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -68,20 +83,15 @@ const AddEnquiry = () => {
     if (!form.customerName.trim()) e.customerName = "Customer name is required";
     if (!form.date) e.date = "Date is required";
     if (!form.pax) e.pax = "Guest count is required";
-    if (form.startTime && form.endTime && form.startTime >= form.endTime)
-      e.endTime = "End time must be after start time";
-    if (form.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail))
-      e.customerEmail = "Invalid email address";
+    if (form.startTime && form.endTime && form.startTime >= form.endTime) e.endTime = "End time must be after start time";
+    if (form.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail)) e.customerEmail = "Invalid email";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
-      toast({ title: "Please fix the errors", description: "Some required fields are missing or invalid.", variant: "destructive" });
-      return;
-    }
+    if (!validate()) { toast({ title: "Please fix the errors", variant: "destructive" }); return; }
 
     const selectedOccasion = occasions.find((o) => o.name === form.occasion);
     if (selectedOccasion) incrementUsage("occasion", selectedOccasion.id);
@@ -90,30 +100,18 @@ const AddEnquiry = () => {
 
     const eventServices = services.filter((s) => s.name.trim()).map((s) => ({ name: s.name, time: s.time }));
     const menuItems: Record<string, string[]> = {};
-    services.forEach((s) => {
-      if (s.name && s.menuItems.length > 0) menuItems[s.name] = s.menuItems;
-    });
+    services.forEach((s) => { if (s.name && s.menuItems.length > 0) menuItems[s.name] = s.menuItems; });
 
     addEvent({
       id: crypto.randomUUID(),
-      title: form.title,
-      customerName: form.customerName,
-      customerPhone: form.customerPhone,
-      customerEmail: form.customerEmail || undefined,
-      occasion: form.occasion,
-      hallName: form.hallName,
-      date: form.date,
-      startTime: form.startTime,
-      endTime: form.endTime,
-      pax: Number(form.pax),
-      ratePerPerson: Number(form.ratePerPerson),
+      title: form.title, customerName: form.customerName, customerPhone: form.customerPhone,
+      customerEmail: form.customerEmail || undefined, occasion: form.occasion, hallName: form.hallName,
+      date: form.date, startTime: form.startTime, endTime: form.endTime,
+      pax: Number(form.pax), ratePerPerson: Number(form.ratePerPerson),
       advanceAmount: form.advanceAmount ? Number(form.advanceAmount) : undefined,
       taxPercent: form.taxPercent ? Number(form.taxPercent) : undefined,
-      services: eventServices,
-      menuItems,
-      status: form.status,
-      assignedStaff: form.assignedStaff || undefined,
-      notes: form.notes || undefined,
+      services: eventServices, menuItems, status: form.status,
+      assignedStaff: form.assignedStaff || undefined, notes: form.notes || undefined,
       rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}\nRATE: ${form.ratePerPerson}\nTIME: ${form.startTime} – ${form.endTime}`,
     });
 
@@ -121,14 +119,14 @@ const AddEnquiry = () => {
     navigate("/events");
   };
 
+  const activeHalls = halls.filter((h) => h.active);
+  const activeExtrasFood = extras.filter((e) => e.active && e.type === "food");
+  const activeExtrasEq = extras.filter((e) => e.active && e.type === "equipment");
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      {/* Page Header */}
       <div className="mb-7">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <div className="flex items-center gap-3">
@@ -147,22 +145,34 @@ const AddEnquiry = () => {
         <FormSection icon={CalendarDays} title="Event Details" iconBg="bg-violet-100" iconColor="text-violet-600">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Event Title" value={form.title} onChange={(v) => update("title", v)} placeholder="e.g. Shah Corporate Lunch" required error={errors.title} />
-            <SmartDropdown
-              label="Occasion" items={occasions} value={form.occasion}
-              onChange={(v) => update("occasion", v)} onAdd={addOccasion}
-              onRemove={removeOccasion} placeholder="Search or select occasion..."
-            />
-            <Field label="Hall / Venue" value={form.hallName} onChange={(v) => update("hallName", v)} placeholder="e.g. Grand Ballroom" />
+            <SmartDropdown label="Occasion" items={occasions} value={form.occasion} onChange={(v) => update("occasion", v)} onAdd={addOccasion} onRemove={removeOccasion} placeholder="Search or select occasion..." />
+            {/* Hall dropdown from Hall Master */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-foreground">Hall / Venue</Label>
+              <Select value={form.hallName} onValueChange={(v) => update("hallName", v)}>
+                <SelectTrigger className="bg-white border-border h-10 text-foreground">
+                  <SelectValue placeholder="Select hall..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-border shadow-lg">
+                  {activeHalls.map((h) => (
+                    <SelectItem key={h.id} value={h.name}>
+                      <span className="font-medium">{h.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{h.capacityMin}–{h.capacityMax} pax</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium text-foreground">Status</Label>
               <Select value={form.status} onValueChange={(v) => update("status", v)}>
-                <SelectTrigger className="bg-white border-border h-10 text-foreground focus:ring-primary/30">
+                <SelectTrigger className="bg-white border-border h-10 text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-border shadow-lg">
-                  <SelectItem value="tentative" className="text-amber-700 focus:bg-amber-50 focus:text-amber-800">🟡 Tentative</SelectItem>
-                  <SelectItem value="confirmed" className="text-emerald-700 focus:bg-emerald-50 focus:text-emerald-800">🟢 Confirmed</SelectItem>
-                  <SelectItem value="cancelled" className="text-red-700 focus:bg-red-50 focus:text-red-800">🔴 Cancelled</SelectItem>
+                  <SelectItem value="tentative" className="text-amber-700 focus:bg-amber-50">🟡 Tentative</SelectItem>
+                  <SelectItem value="confirmed" className="text-emerald-700 focus:bg-emerald-50">🟢 Confirmed</SelectItem>
+                  <SelectItem value="cancelled" className="text-red-700 focus:bg-red-50">🔴 Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -175,11 +185,7 @@ const AddEnquiry = () => {
             <Field label="Customer Name" value={form.customerName} onChange={(v) => update("customerName", v)} placeholder="e.g. Rahul Shah" required error={errors.customerName} />
             <Field label="Phone Number" value={form.customerPhone} onChange={(v) => update("customerPhone", v)} placeholder="+91 98765 43210" />
             <Field label="Email Address" value={form.customerEmail} onChange={(v) => update("customerEmail", v)} placeholder="email@example.com" type="email" error={errors.customerEmail} />
-            <SmartDropdown
-              label="Assigned Staff" items={staff} value={form.assignedStaff}
-              onChange={(v) => update("assignedStaff", v)} onAdd={addStaff}
-              onRemove={removeStaff} placeholder="Search or select staff..."
-            />
+            <SmartDropdown label="Assigned Staff" items={staff} value={form.assignedStaff} onChange={(v) => update("assignedStaff", v)} onAdd={addStaff} onRemove={removeStaff} placeholder="Search or select staff..." />
           </div>
         </FormSection>
 
@@ -198,49 +204,107 @@ const AddEnquiry = () => {
           </div>
         </FormSection>
 
+        {/* AI Package Suggestions */}
+        {suggestedPkgs.length > 0 && (
+          <FormSection icon={Package} title="Suggested Packages" iconBg="bg-violet-100" iconColor="text-violet-600">
+            <p className="text-xs text-muted-foreground mb-3">Based on your occasion and guest count — click to auto-fill</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {suggestedPkgs.map((pkg) => (
+                <button
+                  key={pkg.id}
+                  type="button"
+                  onClick={() => applyPackage(pkg)}
+                  className="rounded-xl border border-border bg-muted/30 p-3 text-left hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-foreground truncate">{pkg.name}</span>
+                    {pkg.featured && <span className="text-amber-500 text-xs">⭐</span>}
+                  </div>
+                  <p className="text-lg font-bold text-primary">₹{pkg.pricePerPerson}<span className="text-xs font-normal text-muted-foreground">/person</span></p>
+                  <p className="text-xs text-muted-foreground mt-1">{pkg.includedItems.length} items · {pkg.timeType.replace("-", " ")}</p>
+                  <p className="text-xs text-primary mt-2 opacity-0 group-hover:opacity-100 transition-opacity">Click to apply →</p>
+                </button>
+              ))}
+            </div>
+          </FormSection>
+        )}
+
         {/* Live Summary */}
         <SummaryPanel
           pax={Number(form.pax) || 0}
           ratePerPerson={Number(form.ratePerPerson) || 0}
           taxPercent={Number(form.taxPercent) || 0}
           advanceAmount={Number(form.advanceAmount) || 0}
+          extrasTotal={extrasTotal}
         />
 
         {/* Services & Menu */}
-        <ServiceMenuBuilder
-          services={services}
-          onChange={setServices}
-          startTime={form.startTime}
-          endTime={form.endTime}
-          pax={Number(form.pax) || 0}
-        />
+        <ServiceMenuBuilder services={services} onChange={setServices} startTime={form.startTime} endTime={form.endTime} pax={Number(form.pax) || 0} />
+
+        {/* Extras & Services */}
+        <FormSection icon={Sparkles} title="Extras & Add-ons" iconBg="bg-amber-100" iconColor="text-amber-600">
+          {activeExtrasFood.length > 0 && (
+            <div className="space-y-2 mb-4">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Food Add-ons</Label>
+              <div className="flex flex-wrap gap-2">
+                {activeExtrasFood.map((ex) => {
+                  const sel = selectedExtras.includes(ex.name);
+                  return (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() => toggleExtra(ex.name)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${sel ? "bg-primary text-white border-primary" : "bg-white text-foreground border-border hover:border-primary/40"}`}
+                    >
+                      {ex.name}
+                      <span className={`${sel ? "text-white/70" : "text-muted-foreground"}`}>₹{ex.price}</span>
+                      {sel && <X className="h-3 w-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {activeExtrasEq.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Equipment</Label>
+              <div className="flex flex-wrap gap-2">
+                {activeExtrasEq.map((ex) => {
+                  const sel = selectedExtras.includes(ex.name);
+                  return (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() => toggleExtra(ex.name)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${sel ? "bg-primary text-white border-primary" : "bg-white text-foreground border-border hover:border-primary/40"}`}
+                    >
+                      {ex.name}
+                      <span className={`${sel ? "text-white/70" : "text-muted-foreground"}`}>₹{ex.price.toLocaleString("en-IN")}</span>
+                      {sel && <X className="h-3 w-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {selectedExtras.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{selectedExtras.length} extras selected</span>
+              <span className="text-sm font-bold text-primary">+₹{extrasTotal.toLocaleString("en-IN")}</span>
+            </div>
+          )}
+        </FormSection>
 
         {/* Notes */}
         <FormSection icon={FileText} title="Additional Notes" iconBg="bg-slate-100" iconColor="text-slate-500">
-          <Textarea
-            value={form.notes}
-            onChange={(e) => update("notes", e.target.value)}
-            placeholder="Any special requirements, dietary restrictions, or additional notes..."
-            rows={3}
-            className="bg-white border-border focus:ring-primary/30 resize-none text-foreground"
-          />
+          <Textarea value={form.notes} onChange={(e) => update("notes", e.target.value)} placeholder="Any special requirements, dietary restrictions, or additional notes..." rows={3} className="bg-white border-border focus:ring-primary/30 resize-none text-foreground" />
         </FormSection>
 
-        {/* Actions */}
         <div className="flex gap-3 pt-2 pb-8">
-          <Button
-            type="submit"
-            className="gradient-primary text-white border-0 shadow-md glow-primary hover:opacity-90 gap-2 px-8"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            Create Enquiry
+          <Button type="submit" className="gradient-primary text-white border-0 shadow-md glow-primary hover:opacity-90 gap-2 px-8">
+            <CheckCircle2 className="w-4 h-4" /> Create Enquiry
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate(-1)}
-            className="border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-          >
+          <Button type="button" variant="outline" onClick={() => navigate(-1)} className="border-border text-muted-foreground hover:text-foreground hover:bg-muted">
             Cancel
           </Button>
         </div>
@@ -249,19 +313,7 @@ const AddEnquiry = () => {
   );
 };
 
-const FormSection = ({
-  icon: Icon,
-  title,
-  iconBg,
-  iconColor,
-  children,
-}: {
-  icon: React.ElementType;
-  title: string;
-  iconBg: string;
-  iconColor: string;
-  children: React.ReactNode;
-}) => (
+const FormSection = ({ icon: Icon, title, iconBg, iconColor, children }: { icon: React.ElementType; title: string; iconBg: string; iconColor: string; children: React.ReactNode }) => (
   <section className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
     <div className="px-5 py-3.5 border-b border-border bg-muted/40 flex items-center gap-2.5">
       <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconBg}`}>
@@ -273,36 +325,10 @@ const FormSection = ({
   </section>
 );
 
-const Field = ({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  required,
-  error,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: string;
-  required?: boolean;
-  error?: string;
-}) => (
+const Field = ({ label, value, onChange, placeholder, type = "text", required, error }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string; required?: boolean; error?: string }) => (
   <div className="space-y-1.5">
-    <Label className="text-sm font-medium text-foreground">
-      {label} {required && <span className="text-red-500">*</span>}
-    </Label>
-    <Input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className={`bg-white border-border h-10 text-foreground placeholder:text-muted-foreground focus:ring-primary/30 transition-colors ${
-        error ? "border-red-400 focus:border-red-400" : ""
-      }`}
-    />
+    <Label className="text-sm font-medium text-foreground">{label} {required && <span className="text-red-500">*</span>}</Label>
+    <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={`bg-white border-border h-10 text-foreground placeholder:text-muted-foreground focus:ring-primary/30 transition-colors ${error ? "border-red-400" : ""}`} />
     {error && <p className="text-xs text-red-500">{error}</p>}
   </div>
 );
