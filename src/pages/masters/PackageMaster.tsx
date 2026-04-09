@@ -151,10 +151,26 @@ export default function PackageMaster() {
       <MasterTable
         rows={filtered}
         columns={[
-          { label: "Package Name", render: (r) => <span className="font-semibold">{r.name}</span> },
-          { label: "Price/Person", render: (r) => <span className="font-bold text-primary">₹{r.pricePerPerson}</span> },
+          { label: "Package Name", render: (r) => (
+            <div>
+              <span className="font-semibold">{r.name}</span>
+              {r.name.toLowerCase().includes("boardroom") || r.name.toLowerCase().includes("saloon") ? (
+                <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Min 10 pax</span>
+              ) : null}
+            </div>
+          )},
+          { label: "Price/Person", render: (r) => <span className="font-bold text-primary">₹{r.pricePerPerson} <span className="text-xs font-normal text-muted-foreground">ex GST</span></span> },
           { label: "Type", render: (r) => <span className="capitalize px-2 py-0.5 rounded-full text-xs bg-violet-100 text-violet-700">{r.timeType.replace("-", " ")}</span> },
-          { label: "Items", render: (r) => <span className="text-xs text-muted-foreground">{r.includedItems.length} items</span> },
+          { label: "Included Items", render: (r) => (
+            <div className="flex flex-wrap gap-1 max-w-xs">
+              {r.includedItems.slice(0, 4).map((item) => (
+                <span key={item} className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{item}</span>
+              ))}
+              {r.includedItems.length > 4 && (
+                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">+{r.includedItems.length - 4} more</span>
+              )}
+            </div>
+          )},
           { label: "Used", render: (r) => <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{r.usageCount}×</span> },
         ]}
         onEdit={openEdit}
