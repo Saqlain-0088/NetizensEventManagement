@@ -1,4 +1,5 @@
-import { CalendarDays, Users, CheckCircle2, XCircle, Clock, TrendingUp, ArrowRight, Sparkles } from "lucide-react";
+import { CalendarDays, Users, CheckCircle2, XCircle, Clock, ArrowRight, Sparkles } from "lucide-react";
+// HIDDEN (temporary): TrendingUp (revenue banner icon)
 import { useEvents } from "@/context/EventContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,8 @@ const Dashboard = () => {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 5);
 
-  const revenue = events
-    .filter((e) => e.status === "confirmed")
-    .reduce((s, e) => s + (e.pax * (e.ratePerPerson || 0)), 0);
+  // HIDDEN (temporary): revenue calculation
+  // const revenue = events.filter(...).reduce(...);
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
@@ -51,18 +51,8 @@ const Dashboard = () => {
         <StatCard icon={Users} label="Total PAX" value={totalPax} iconBg="bg-blue-100" iconColor="text-blue-600" valueColor="text-blue-700" />
       </div>
 
-      {/* Revenue Banner */}
-      {revenue > 0 && (
-        <div className="rounded-2xl gradient-primary p-5 flex items-center justify-between glow-primary">
-          <div>
-            <p className="text-white/80 text-sm font-medium">Confirmed Revenue</p>
-            <p className="text-white text-3xl font-bold mt-0.5">
-              ₹{revenue.toLocaleString("en-IN")}
-            </p>
-          </div>
-          <TrendingUp className="w-12 h-12 text-white/25" />
-        </div>
-      )}
+      {/* HIDDEN (temporary): Revenue Banner */}
+      {/* {revenue > 0 && ( <div className="rounded-2xl gradient-primary ..."> ... </div> )} */}
 
       {/* Upcoming Events */}
       <div>

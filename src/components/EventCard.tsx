@@ -12,10 +12,11 @@ const statusColors: Record<string, { bg: string; text: string; border: string }>
 };
 
 export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, ref) => {
-  const subtotal = event.pax * event.ratePerPerson;
-  const taxAmount = event.taxPercent ? subtotal * (event.taxPercent / 100) : 0;
-  const grandTotal = subtotal + taxAmount;
-  const balance = event.advanceAmount ? grandTotal - event.advanceAmount : grandTotal;
+  // HIDDEN (temporary): pricing calculations
+  // const subtotal = event.pax * event.ratePerPerson;
+  // const taxAmount = event.taxPercent ? subtotal * (event.taxPercent / 100) : 0;
+  // const grandTotal = subtotal + taxAmount;
+  // const balance = event.advanceAmount ? grandTotal - event.advanceAmount : grandTotal;
   const sc = statusColors[event.status] || statusColors.tentative;
 
   const formattedDate = new Date(event.date).toLocaleDateString("en-IN", {
@@ -126,12 +127,12 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
       {/* ── BODY ── */}
       <div style={{ flex: 1, padding: "40px 56px", display: "flex", flexDirection: "column", gap: "32px" }}>
 
-        {/* Customer & Staff row */}
+        {/* Customer info — HIDDEN (temporary): assigned staff */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
           <InfoCard icon="👤" label="Customer Name" value={event.customerName} />
           <InfoCard icon="📞" label="Contact" value={event.customerPhone || "—"} />
           {event.customerEmail && <InfoCard icon="✉️" label="Email" value={event.customerEmail} />}
-          {event.assignedStaff && <InfoCard icon="🧑‍🍳" label="Assigned Staff" value={event.assignedStaff} />}
+          {/* HIDDEN (temporary): Assigned Staff card */}
         </div>
 
         {/* Schedule */}
@@ -184,39 +185,8 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
           </CardSection>
         )}
 
-        {/* Pricing */}
-        <CardSection title="Pricing Summary" icon="💰">
-          <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "12px", overflow: "hidden" }}>
-            <PriceRow label={`Rate per person (₹${event.ratePerPerson.toLocaleString("en-IN")})`} value={`₹${subtotal.toLocaleString("en-IN")}`} sub={`${event.pax} guests × ₹${event.ratePerPerson}`} />
-            {event.taxPercent ? (
-              <PriceRow label={`GST / Tax`} value={`₹${taxAmount.toLocaleString("en-IN")}`} sub={`${event.taxPercent}% of subtotal`} />
-            ) : null}
-            {event.advanceAmount ? (
-              <PriceRow label="Advance Received" value={`₹${event.advanceAmount.toLocaleString("en-IN")}`} sub="Paid" positive />
-            ) : null}
-            {/* Grand total */}
-            <div style={{
-              background: "linear-gradient(135deg, #4C1D95, #7C3AED)",
-              padding: "18px 24px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-              <div>
-                <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "12px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase" }}>Grand Total</p>
-                <p style={{ color: "#FFFFFF", fontSize: "28px", fontWeight: 800, marginTop: "2px" }}>₹{grandTotal.toLocaleString("en-IN")}</p>
-              </div>
-              {event.advanceAmount ? (
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "12px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase" }}>Balance Due</p>
-                  <p style={{ color: balance > 0 ? "#FCD34D" : "#6EE7B7", fontSize: "24px", fontWeight: 800, marginTop: "2px" }}>
-                    ₹{Math.abs(balance).toLocaleString("en-IN")}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </CardSection>
+        {/* HIDDEN (temporary): Pricing Summary section (revenue/payment) */}
+        {/* <CardSection title="Pricing Summary" icon="💰"> ... </CardSection> */}
 
         {/* Notes */}
         {event.notes && (

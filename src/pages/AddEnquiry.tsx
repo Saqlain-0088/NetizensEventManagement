@@ -23,15 +23,17 @@ interface ServiceEntry { name: string; time: string; menuItems: string[]; }
 const AddEnquiry = () => {
   const navigate = useNavigate();
   const { addEvent } = useEvents();
-  const { occasions, staff, addOccasion, removeOccasion, addStaff, removeStaff, incrementUsage } = useMasterData();
+  const { occasions, addOccasion, removeOccasion, incrementUsage } = useMasterData();
+  // HIDDEN (temporary): staff, addStaff, removeStaff
   const { packages, halls, extras, suggestPackages, suggestHall } = useBanquetMaster();
   const { toast } = useToast();
 
   const [form, setForm] = useState({
     title: "", customerName: "", customerPhone: "", customerEmail: "",
     occasion: "", hallName: "", date: "", startTime: "", endTime: "",
-    pax: "", ratePerPerson: "", advanceAmount: "", taxPercent: "18",
-    status: "tentative" as EventStatus, assignedStaff: "", notes: "",
+    pax: "", ratePerPerson: "",
+    // HIDDEN (temporary): advanceAmount, taxPercent, assignedStaff
+    status: "tentative" as EventStatus, notes: "",
   });
   const [services, setServices] = useState<ServiceEntry[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -95,8 +97,7 @@ const AddEnquiry = () => {
 
     const selectedOccasion = occasions.find((o) => o.name === form.occasion);
     if (selectedOccasion) incrementUsage("occasion", selectedOccasion.id);
-    const selectedStaff = staff.find((s) => s.name === form.assignedStaff);
-    if (selectedStaff) incrementUsage("staff", selectedStaff.id);
+    // HIDDEN (temporary): staff usage increment
 
     const eventServices = services.filter((s) => s.name.trim()).map((s) => ({ name: s.name, time: s.time }));
     const menuItems: Record<string, string[]> = {};
@@ -108,10 +109,12 @@ const AddEnquiry = () => {
       customerEmail: form.customerEmail || undefined, occasion: form.occasion, hallName: form.hallName,
       date: form.date, startTime: form.startTime, endTime: form.endTime,
       pax: Number(form.pax), ratePerPerson: Number(form.ratePerPerson),
-      advanceAmount: form.advanceAmount ? Number(form.advanceAmount) : undefined,
-      taxPercent: form.taxPercent ? Number(form.taxPercent) : undefined,
+      // HIDDEN (temporary): advanceAmount, taxPercent
+      advanceAmount: undefined,
+      taxPercent: undefined,
       services: eventServices, menuItems, status: form.status,
-      assignedStaff: form.assignedStaff || undefined, notes: form.notes || undefined,
+      // HIDDEN (temporary): assignedStaff
+      assignedStaff: undefined, notes: form.notes || undefined,
       rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}\nRATE: ${form.ratePerPerson}\nTIME: ${form.startTime} – ${form.endTime}`,
     });
 
@@ -185,7 +188,7 @@ const AddEnquiry = () => {
             <Field label="Customer Name" value={form.customerName} onChange={(v) => update("customerName", v)} placeholder="e.g. Rahul Shah" required error={errors.customerName} />
             <Field label="Phone Number" value={form.customerPhone} onChange={(v) => update("customerPhone", v)} placeholder="+91 98765 43210" />
             <Field label="Email Address" value={form.customerEmail} onChange={(v) => update("customerEmail", v)} placeholder="email@example.com" type="email" error={errors.customerEmail} />
-            <SmartDropdown label="Assigned Staff" items={staff} value={form.assignedStaff} onChange={(v) => update("assignedStaff", v)} onAdd={addStaff} onRemove={removeStaff} placeholder="Search or select staff..." />
+            {/* HIDDEN (temporary): Assigned Staff dropdown */}
           </div>
         </FormSection>
 
@@ -199,8 +202,7 @@ const AddEnquiry = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <Field label="PAX (Guests)" value={form.pax} onChange={(v) => update("pax", v)} type="number" placeholder="50" required error={errors.pax} />
             <Field label="Rate / Person (₹)" value={form.ratePerPerson} onChange={(v) => update("ratePerPerson", v)} type="number" placeholder="600" />
-            <Field label="Advance (₹)" value={form.advanceAmount} onChange={(v) => update("advanceAmount", v)} type="number" placeholder="10000" />
-            <Field label="Tax %" value={form.taxPercent} onChange={(v) => update("taxPercent", v)} type="number" placeholder="18" />
+            {/* HIDDEN (temporary): Advance (₹) and Tax % fields */}
           </div>
         </FormSection>
 
@@ -229,14 +231,8 @@ const AddEnquiry = () => {
           </FormSection>
         )}
 
-        {/* Live Summary */}
-        <SummaryPanel
-          pax={Number(form.pax) || 0}
-          ratePerPerson={Number(form.ratePerPerson) || 0}
-          taxPercent={Number(form.taxPercent) || 0}
-          advanceAmount={Number(form.advanceAmount) || 0}
-          extrasTotal={extrasTotal}
-        />
+        {/* HIDDEN (temporary): Live Summary Panel (revenue/payment section) */}
+        {/* <SummaryPanel pax={...} ratePerPerson={...} taxPercent={...} advanceAmount={...} extrasTotal={extrasTotal} /> */}
 
         {/* Services & Menu */}
         <ServiceMenuBuilder services={services} onChange={setServices} startTime={form.startTime} endTime={form.endTime} pax={Number(form.pax) || 0} />
