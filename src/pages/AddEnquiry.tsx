@@ -87,8 +87,10 @@ const AddEnquiry = () => {
     if (!form.title.trim()) e.title = "Event title is required";
     if (!form.customerName.trim()) e.customerName = "Customer name is required";
     if (!form.date) e.date = "Date is required";
-    if (!form.pax) e.pax = "Guest count is required";
+    if (!form.startTime) e.startTime = "Start time is required";
+    if (!form.endTime) e.endTime = "End time is required";
     if (form.startTime && form.endTime && form.startTime >= form.endTime) e.endTime = "End time must be after start time";
+    if (!form.pax) e.pax = "Guest count is required";
     if (form.customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail)) e.customerEmail = "Invalid email";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -195,12 +197,12 @@ const AddEnquiry = () => {
           </div>
         </FormSection>
 
-        {/* Schedule & Pricing */}
-        <FormSection icon={Clock} title="Schedule & Pricing" iconBg="bg-amber-100" iconColor="text-amber-600">
+        {/* Schedule */}
+        <FormSection icon={Clock} title="Schedule" iconBg="bg-amber-100" iconColor="text-amber-600">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Field label="Event Date" value={form.date} onChange={(v) => update("date", v)} type="date" required error={errors.date} />
-            <Field label="Start Time" value={form.startTime} onChange={(v) => update("startTime", v)} type="time" />
-            <Field label="End Time" value={form.endTime} onChange={(v) => update("endTime", v)} type="time" error={errors.endTime} />
+            <Field label="Start Time" value={form.startTime} onChange={(v) => update("startTime", v)} type="time" required error={errors.startTime} />
+            <Field label="End Time" value={form.endTime} onChange={(v) => update("endTime", v)} type="time" required error={errors.endTime} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <Field label="PAX (Guests)" value={form.pax} onChange={(v) => update("pax", v)} type="number" placeholder="50" required error={errors.pax} />
