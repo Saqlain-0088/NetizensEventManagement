@@ -12,13 +12,11 @@ import { useToast } from "@/hooks/use-toast";
 import type { EventStatus } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
 import SummaryPanel from "@/components/enquiry/SummaryPanel";
-import ServiceMenuBuilder from "@/components/enquiry/ServiceMenuBuilder";
+import ServiceMenuBuilder, { type ServiceEntry, PERSON_CATEGORIES } from "@/components/enquiry/ServiceMenuBuilder";
 import {
   CalendarDays, User, Clock, FileText, Sparkles,
-  CheckCircle2, ArrowLeft, Package, Building2, Plus, X,
+  CheckCircle2, ArrowLeft, Package, Plus, X,
 } from "lucide-react";
-
-interface ServiceEntry { name: string; time: string; menuItems: string[]; }
 
 const AddEnquiry = () => {
   const navigate = useNavigate();
@@ -68,7 +66,12 @@ const AddEnquiry = () => {
     const timeMap: Record<string, string> = {
       "high-tea": "16:00", lunch: "12:30", dinner: "20:00", conference: "10:00", custom: "",
     };
-    setServices([{ name: pkg.name, time: timeMap[pkg.timeType] || "", menuItems: pkg.includedItems }]);
+    setServices([{
+      name: pkg.name,
+      time: timeMap[pkg.timeType] || "",
+      menuItems: pkg.includedItems,
+      personCategories: PERSON_CATEGORIES.map((c) => ({ category: c, count: "" })),
+    }]);
     toast({ title: `Package applied: ${pkg.name}`, description: `₹${pkg.pricePerPerson}/person · ${pkg.includedItems.length} items auto-filled` });
   };
 
