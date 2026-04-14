@@ -58,33 +58,33 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
             <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", fontWeight: 600, letterSpacing: "3px", textTransform: "uppercase", marginBottom: "12px" }}>
               Royal Banquets &amp; Events
             </p>
-            {/* Event title */}
-            <h1 style={{ color: "#FFFFFF", fontSize: "48px", fontWeight: 800, lineHeight: 1.1, margin: 0, letterSpacing: "-0.5px" }}>
-              {event.title}
-            </h1>
+            {/* Event title + status on same line */}
+            <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap" }}>
+              <h1 style={{ color: "#FFFFFF", fontSize: "48px", fontWeight: 800, lineHeight: 1.1, margin: 0, letterSpacing: "-0.5px" }}>
+                {event.title}
+              </h1>
+              {/* Status badge — inline with title */}
+              <div style={{
+                background: sc.bg,
+                color: sc.text,
+                border: `2px solid ${sc.border}`,
+                borderRadius: "8px",
+                padding: "6px 18px",
+                fontSize: "13px",
+                fontWeight: 700,
+                letterSpacing: "2px",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+                alignSelf: "center",
+              }}>
+                {event.status === "confirmed" ? "Confirmed" : event.status === "cancelled" ? "Cancelled" : "Tentative"}
+              </div>
+            </div>
             {event.hallName && (
               <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "20px", marginTop: "10px", fontWeight: 400 }}>
                 {event.hallName}
               </p>
             )}
-          </div>
-
-          {/* Status badge */}
-          <div style={{
-            background: sc.bg,
-            color: sc.text,
-            border: `2px solid ${sc.border}`,
-            borderRadius: "12px",
-            padding: "8px 20px",
-            fontSize: "14px",
-            fontWeight: 700,
-            letterSpacing: "2px",
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-            marginLeft: "24px",
-            marginTop: "4px",
-          }}>
-            {event.status === "confirmed" ? "Confirmed" : event.status === "cancelled" ? "Cancelled" : "Tentative"}
           </div>
         </div>
 
@@ -130,7 +130,11 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
           <InfoCard label="Customer Name" value={event.customerName} />
           <InfoCard label="Contact" value={event.customerPhone || "—"} />
-          {event.customerEmail && <InfoCard label="Email" value={event.customerEmail} />}
+          {event.customerEmail && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <InfoCard label="Email" value={event.customerEmail} />
+            </div>
+          )}
         </div>
 
         {/* Schedule */}
@@ -142,13 +146,14 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
                   background: "#FFFFFF",
                   border: "1px solid #E5E7EB",
                   borderRadius: "10px",
-                  padding: "14px 18px",
+                  padding: "14px 20px",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  width: "100%",
                 }}>
                   <span style={{ fontSize: "16px", fontWeight: 600, color: "#1E1B4B" }}>{s.name}</span>
-                  <span style={{ fontSize: "15px", fontWeight: 700, color: "#7C3AED", background: "#EDE9FE", padding: "4px 12px", borderRadius: "20px" }}>{s.time}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#7C3AED", background: "#EDE9FE", padding: "4px 14px", borderRadius: "20px", whiteSpace: "nowrap", marginLeft: "12px" }}>{s.time}</span>
                 </div>
               ))}
             </div>
@@ -162,7 +167,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
               {Object.entries(event.menuItems).map(([service, items]) => (
                 <div key={service} style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "10px", padding: "16px 20px" }}>
                   <p style={{ fontSize: "13px", fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "10px" }}>{service}</p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "flex-start", alignItems: "center" }}>
                     {items.map((item, i) => (
                       <span key={i} style={{
                         background: "#F5F3FF",
