@@ -1,15 +1,21 @@
 import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, LogOut } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout, user } = useAuth();
 
-  // Show back button on every page except the dashboard (root)
   const showBack = location.pathname !== "/";
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <SidebarProvider>
@@ -20,7 +26,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {/* Hamburger */}
             <SidebarTrigger className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg flex-shrink-0" />
 
-            {/* Back button — shown on all pages except dashboard */}
+            {/* Back button */}
             {showBack && (
               <button
                 onClick={() => navigate(-1)}
@@ -31,15 +37,31 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </button>
             )}
 
-            {/* Divider */}
             {showBack && <div className="w-px h-5 bg-border flex-shrink-0" />}
 
             {/* Brand */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <span className="text-base font-bold text-gradient-primary">Event Manager</span>
+              <span className="text-base font-bold text-gradient-primary truncate">Event Manager</span>
+            </div>
+
+            {/* User + Logout */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {user && (
+                <span className="hidden sm:block text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-lg capitalize">
+                  {user}
+                </span>
+              )}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:block">Logout</span>
+              </button>
             </div>
           </header>
           <main className="flex-1 overflow-auto">{children}</main>
