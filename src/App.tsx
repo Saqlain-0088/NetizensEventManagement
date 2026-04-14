@@ -22,6 +22,13 @@ import ExtrasMaster from "./pages/masters/ExtrasMaster";
 
 const queryClient = new QueryClient();
 
+// Wrap a single page in ProtectedRoute + AppLayout
+const Protected = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AppLayout>{children}</AppLayout>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -36,24 +43,16 @@ const App = () => (
                   {/* Public */}
                   <Route path="/login" element={<Login />} />
 
-                  {/* Protected — all wrapped in AppLayout */}
-                  <Route path="/*" element={
-                    <ProtectedRoute>
-                      <AppLayout>
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/events" element={<Events />} />
-                          <Route path="/add-enquiry" element={<AddEnquiry />} />
-                          <Route path="/masters" element={<MastersHub />} />
-                          <Route path="/masters/halls" element={<HallMaster />} />
-                          <Route path="/masters/packages" element={<PackageMaster />} />
-                          <Route path="/masters/menu" element={<MenuMaster />} />
-                          <Route path="/masters/extras" element={<ExtrasMaster />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </AppLayout>
-                    </ProtectedRoute>
-                  } />
+                  {/* Redirect root to login if not handled */}
+                  <Route path="/" element={<Protected><Dashboard /></Protected>} />
+                  <Route path="/events" element={<Protected><Events /></Protected>} />
+                  <Route path="/add-enquiry" element={<Protected><AddEnquiry /></Protected>} />
+                  <Route path="/masters" element={<Protected><MastersHub /></Protected>} />
+                  <Route path="/masters/halls" element={<Protected><HallMaster /></Protected>} />
+                  <Route path="/masters/packages" element={<Protected><PackageMaster /></Protected>} />
+                  <Route path="/masters/menu" element={<Protected><MenuMaster /></Protected>} />
+                  <Route path="/masters/extras" element={<Protected><ExtrasMaster /></Protected>} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </EventProvider>
             </BanquetMasterProvider>
