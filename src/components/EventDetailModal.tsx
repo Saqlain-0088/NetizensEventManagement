@@ -114,7 +114,7 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[860px] w-full p-0 overflow-hidden bg-white border-border [&>button:first-child]:hidden">
+      <DialogContent className="max-w-[860px] w-full p-0 overflow-hidden bg-white border-border">
         {/* ── Modal header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30 shrink-0">
           <div>
