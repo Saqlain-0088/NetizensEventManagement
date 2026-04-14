@@ -64,7 +64,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
             </h1>
             {event.hallName && (
               <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "20px", marginTop: "10px", fontWeight: 400 }}>
-                📍 {event.hallName}
+                {event.hallName}
               </p>
             )}
           </div>
@@ -84,7 +84,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
             marginLeft: "24px",
             marginTop: "4px",
           }}>
-            {event.status === "confirmed" ? "✓ Confirmed" : event.status === "cancelled" ? "✕ Cancelled" : "⏳ Tentative"}
+            {event.status === "confirmed" ? "Confirmed" : event.status === "cancelled" ? "Cancelled" : "Tentative"}
           </div>
         </div>
 
@@ -127,17 +127,15 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
       {/* ── BODY ── */}
       <div style={{ flex: 1, padding: "40px 56px", display: "flex", flexDirection: "column", gap: "32px" }}>
 
-        {/* Customer info — HIDDEN (temporary): assigned staff */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-          <InfoCard icon="👤" label="Customer Name" value={event.customerName} />
-          <InfoCard icon="📞" label="Contact" value={event.customerPhone || "—"} />
-          {event.customerEmail && <InfoCard icon="✉️" label="Email" value={event.customerEmail} />}
-          {/* HIDDEN (temporary): Assigned Staff card */}
+          <InfoCard label="Customer Name" value={event.customerName} />
+          <InfoCard label="Contact" value={event.customerPhone || "—"} />
+          {event.customerEmail && <InfoCard label="Email" value={event.customerEmail} />}
         </div>
 
         {/* Schedule */}
         {event.services.length > 0 && (
-          <CardSection title="Event Schedule" icon="🗓️">
+          <CardSection title="Event Schedule">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               {event.services.map((s, i) => (
                 <div key={i} style={{
@@ -159,7 +157,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
 
         {/* Menu */}
         {Object.keys(event.menuItems).length > 0 && (
-          <CardSection title="Menu Details" icon="🍽️">
+          <CardSection title="Menu Details">
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {Object.entries(event.menuItems).map(([service, items]) => (
                 <div key={service} style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: "10px", padding: "16px 20px" }}>
@@ -190,7 +188,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
 
         {/* Notes */}
         {event.notes && (
-          <CardSection title="Special Notes" icon="📝">
+          <CardSection title="Special Notes">
             <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "10px", padding: "16px 20px" }}>
               <p style={{ fontSize: "15px", color: "#78350F", lineHeight: 1.6 }}>{event.notes}</p>
             </div>
@@ -228,28 +226,21 @@ EventCard.displayName = "EventCard";
 
 // ── Sub-components ──
 
-const InfoCard = ({ icon, label, value }: { icon: string; label: string; value: string }) => (
+const InfoCard = ({ label, value }: { label: string; value: string }) => (
   <div style={{
     background: "#FFFFFF",
     border: "1px solid #E5E7EB",
     borderRadius: "12px",
     padding: "16px 20px",
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "12px",
   }}>
-    <span style={{ fontSize: "20px", lineHeight: 1 }}>{icon}</span>
-    <div>
-      <p style={{ fontSize: "11px", fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "1.5px" }}>{label}</p>
-      <p style={{ fontSize: "17px", fontWeight: 700, color: "#1E1B4B", marginTop: "4px" }}>{value}</p>
-    </div>
+    <p style={{ fontSize: "11px", fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "1.5px" }}>{label}</p>
+    <p style={{ fontSize: "17px", fontWeight: 700, color: "#1E1B4B", marginTop: "4px" }}>{value}</p>
   </div>
 );
 
-const CardSection = ({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) => (
+const CardSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div>
     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-      <span style={{ fontSize: "18px" }}>{icon}</span>
       <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#1E1B4B", margin: 0 }}>{title}</h3>
       <div style={{ flex: 1, height: "1px", background: "#E5E7EB", marginLeft: "8px" }} />
     </div>
