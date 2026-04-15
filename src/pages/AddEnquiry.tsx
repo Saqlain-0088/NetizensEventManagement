@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { EventStatus } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
 import ServiceMenuBuilder, { type ServiceEntry, PERSON_CATEGORIES } from "@/components/enquiry/ServiceMenuBuilder";
-import { CalendarPicker, TimeSlotPicker, AllPackages } from "@/components/enquiry/DateTimePicker";
+import { CalendlyScheduler, AllPackages } from "@/components/enquiry/DateTimePicker";
 import {
   CalendarDays, User, Clock, Utensils, CheckCircle2,
   ArrowLeft, ArrowRight, Package, Sparkles, X, FileText, ChevronRight,
@@ -263,29 +263,16 @@ const AddEnquiry = () => {
             {/* ── STEP 3: Schedule — Calendly-style ────────────────────── */}
             {step === 3 && (
               <div className="space-y-5">
-                {/* Date + Start time side by side on md, stacked on sm */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <CalendarPicker
-                    value={form.date}
-                    onChange={(v) => update("date", v)}
-                    error={errors.date}
-                  />
-                  <div className="space-y-4">
-                    <TimeSlotPicker
-                      label="Start Time"
-                      value={form.startTime}
-                      onChange={(v) => { update("startTime", v); if (form.endTime && v >= form.endTime) update("endTime", ""); }}
-                      error={errors.startTime}
-                    />
-                    <TimeSlotPicker
-                      label="End Time"
-                      value={form.endTime}
-                      onChange={(v) => update("endTime", v)}
-                      disableBefore={form.startTime || null}
-                      error={errors.endTime}
-                    />
-                  </div>
-                </div>
+                {/* Calendly-style date + time picker */}
+                <CalendlyScheduler
+                  date={form.date}
+                  onDateChange={(v) => update("date", v)}
+                  startTime={form.startTime}
+                  onStartTimeChange={(v) => { update("startTime", v); if (form.endTime && v >= form.endTime) update("endTime", ""); }}
+                  endTime={form.endTime}
+                  onEndTimeChange={(v) => update("endTime", v)}
+                  errors={{ date: errors.date, startTime: errors.startTime, endTime: errors.endTime }}
+                />
 
                 {/* PAX + Rate */}
                 <div className="grid grid-cols-2 gap-4">
