@@ -44,7 +44,7 @@ const Dashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard icon={CalendarDays} label="Total Events" value={events.length} iconBg="bg-violet-100" iconColor="text-violet-600" valueColor="text-violet-700" />
+        <StatCard icon={CalendarDays} label="Total Events" value={events.length} iconBg="bg-blue-100" iconColor="text-blue-600" valueColor="text-blue-700" />
         <StatCard icon={CheckCircle2} label="Confirmed" value={confirmed} iconBg="bg-emerald-100" iconColor="text-emerald-600" valueColor="text-emerald-700" />
         <StatCard icon={Clock} label="Tentative" value={tentative} iconBg="bg-amber-100" iconColor="text-amber-600" valueColor="text-amber-700" />
         <StatCard icon={XCircle} label="Cancelled" value={cancelled} iconBg="bg-red-100" iconColor="text-red-600" valueColor="text-red-700" />

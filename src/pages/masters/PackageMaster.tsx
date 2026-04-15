@@ -63,8 +63,8 @@ export default function PackageMaster() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center">
-            <PkgIcon className="w-4.5 h-4.5 text-violet-600" />
+          <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
+            <PkgIcon className="w-4.5 h-4.5 text-blue-600" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground">Package Master</h1>
@@ -160,7 +160,7 @@ export default function PackageMaster() {
             </div>
           )},
           { label: "Price/Person", render: (r) => <span className="font-bold text-primary">₹{r.pricePerPerson} <span className="text-xs font-normal text-muted-foreground">ex GST</span></span> },
-          { label: "Type", render: (r) => <span className="capitalize px-2 py-0.5 rounded-full text-xs bg-violet-100 text-violet-700">{r.timeType.replace("-", " ")}</span> },
+          { label: "Type", render: (r) => <span className="capitalize px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">{r.timeType.replace("-", " ")}</span> },
           { label: "Included Items", render: (r) => (
             <div className="flex flex-wrap gap-1 max-w-xs">
               {r.includedItems.slice(0, 4).map((item) => (

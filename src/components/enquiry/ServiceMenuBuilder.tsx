@@ -44,7 +44,7 @@ const CATEGORY_BADGE: Record<MasterMenuItem["category"], string> = {
   snacks:    "bg-orange-100 text-orange-700",
   breakfast: "bg-yellow-100 text-yellow-700",
   lunch:     "bg-green-100 text-green-700",
-  dinner:    "bg-purple-100 text-purple-700",
+  dinner:    "bg-indigo-100 text-indigo-700",
   desserts:  "bg-pink-100 text-pink-700",
 };
 

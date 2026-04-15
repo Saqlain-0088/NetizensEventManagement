@@ -16,8 +16,8 @@ const cards = [
     title: "Packages",
     description: "Configure meal packages with pricing and menu items",
     icon: Package,
-    color: "bg-violet-100 text-violet-600",
-    border: "border-violet-200 hover:border-violet-400",
+    color: "bg-blue-100 text-blue-600",
+    border: "border-blue-200 hover:border-blue-400",
     path: "/masters/packages",
   },
   {
