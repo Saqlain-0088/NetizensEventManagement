@@ -1,0 +1,8 @@
+const fs=require(String.fromCharCode(102,115));
+let s=fs.readFileSync(String.fromCharCode(115,114,99,47,112,97,103,101,115,47,65,100,100,69,110,113,117,105,114,121,46,116,115,120),String.fromCharCode(117,116,102,56));
+const OLD_IMP=String.fromCharCode(67,104,101,118,114,111,110,82,105,103,104,116);
+const NEW_IMP=String.fromCharCode(67,104,101,118,114,111,110,82,105,103,104,116)+String.fromCharCode(44,32,67,104,101,118,114,111,110,76,101,102,116,44,32,67,104,101,99,107,44,32,80,108,117,115);
+if(!s.includes(String.fromCharCode(67,104,101,118,114,111,110,76,101,102,116))){s=s.replace(OLD_IMP,NEW_IMP);}
+if(!s.includes(String.fromCharCode(109,101,110,117,73,116,101,109,115))){s=s.replace(String.fromCharCode(105,110,99,114,101,109,101,110,116,85,115,97,103,101,32,125,32,61,32,117,115,101,77,97,115,116,101,114,68,97,116,97),String.fromCharCode(105,110,99,114,101,109,101,110,116,85,115,97,103,101,44,32,109,101,110,117,73,116,101,109,115,32,125,32,61,32,117,115,101,77,97,115,116,101,114,68,97,116,97));}
+fs.writeFileSync(String.fromCharCode(115,114,99,47,112,97,103,101,115,47,65,100,100,69,110,113,117,105,114,121,46,116,115,120),s,String.fromCharCode(117,116,102,56));
+console.log(String.fromCharCode(100,111,110,101),s.includes(String.fromCharCode(67,104,101,118,114,111,110,76,101,102,116)),s.includes(String.fromCharCode(109,101,110,117,73,116,101,109,115)));
