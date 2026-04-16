@@ -1,6 +1,7 @@
 import { LayoutDashboard, CalendarDays, PlusCircle, Sparkles, Database } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import {
   Sidebar,
   SidebarContent,
