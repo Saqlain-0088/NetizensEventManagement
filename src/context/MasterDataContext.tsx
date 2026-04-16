@@ -104,17 +104,17 @@ export const MasterDataProvider = ({ children }: { children: ReactNode }) => {
   const [serviceTemplates] = useState<ServiceTemplate[]>(defaultServiceTemplates);
 
   const addStaff = (name: string) => {
-    setStaff((prev) => [...prev, { id: crypto.randomUUID(), name, usageCount: 0 }]);
+    setStaff((prev) => [...prev, { id: Math.random().toString(36).slice(2, 11), name, usageCount: 0 }]);
   };
   const removeStaff = (id: string) => setStaff((prev) => prev.filter((s) => s.id !== id));
 
   const addOccasion = (name: string) => {
-    setOccasions((prev) => [...prev, { id: crypto.randomUUID(), name, usageCount: 0 }]);
+    setOccasions((prev) => [...prev, { id: Math.random().toString(36).slice(2, 11), name, usageCount: 0 }]);
   };
   const removeOccasion = (id: string) => setOccasions((prev) => prev.filter((o) => o.id !== id));
 
   const addMenuItem = (name: string, category: MenuItem["category"]) => {
-    setMenuItems((prev) => [...prev, { id: crypto.randomUUID(), name, category, usageCount: 0 }]);
+    setMenuItems((prev) => [...prev, { id: Math.random().toString(36).slice(2, 11), name, category, usageCount: 0 }]);
   };
   const removeMenuItem = (id: string) => setMenuItems((prev) => prev.filter((m) => m.id !== id));
 

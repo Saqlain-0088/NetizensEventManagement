@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Label } from "@/components/ui/label";
+import { Clock, Users, Utensils, Plus, X, Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Plus, X, Utensils, Users, Clock, ChevronDown, Search } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { useMasterData, type MenuItem as MasterMenuItem } from "@/context/MasterDataContext";
+import { fmt12 } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type PersonCategory = "Regular" | "P. Jain" | "S. Jain";
@@ -62,28 +63,31 @@ function makeSlots(fromH: number, fromM: number, toH: number, toM: number, step 
   return slots;
 }
 
-const ALL_TIME_SLOTS = makeSlots(6, 0, 23, 30);
-
-function fmt12(hhmm: string) {
-  if (!hhmm) return "";
-  const [h, m] = hhmm.split(":").map(Number);
-  const ampm = h < 12 ? "AM" : "PM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${pad(m)} ${ampm}`;
-}
-
-const TIME_SECTIONS = [
-  { label: "Morning",   slots: ALL_TIME_SLOTS.filter((t) => t >= "06:00" && t < "12:00") },
-  { label: "Afternoon", slots: ALL_TIME_SLOTS.filter((t) => t >= "12:00" && t < "17:00") },
-  { label: "Evening",   slots: ALL_TIME_SLOTS.filter((t) => t >= "17:00" && t < "20:00") },
-  { label: "Night",     slots: ALL_TIME_SLOTS.filter((t) => t >= "20:00") },
-];
+const ALL_TIME_SLOTS = makeSlots(0, 0, 23, 59);
 
 // ── Compact time picker (dropdown style) ──────────────────────────────────────
 const CompactTimePicker = ({
-  value, onChange,
-}: { value: string; onChange: (v: string) => void }) => {
+  value, onChange, minTime, maxTime
+}: { value: string; onChange: (v: string) => void; minTime?: string; maxTime?: string }) => {
   const [open, setOpen] = useState(false);
+
+  let allowedSlots = [...ALL_TIME_SLOTS];
+  if (minTime && !allowedSlots.includes(minTime)) allowedSlots.push(minTime);
+  if (maxTime && !allowedSlots.includes(maxTime)) allowedSlots.push(maxTime);
+  allowedSlots.sort();
+  allowedSlots = allowedSlots.filter((t) => {
+    if (minTime && t < minTime) return false;
+    if (maxTime && t > maxTime) return false;
+    return true;
+  });
+
+  const sections = [
+    { label: "Late Night", slots: allowedSlots.filter((t) => t >= "00:00" && t < "06:00") },
+    { label: "Morning",   slots: allowedSlots.filter((t) => t >= "06:00" && t < "12:00") },
+    { label: "Afternoon", slots: allowedSlots.filter((t) => t >= "12:00" && t < "17:00") },
+    { label: "Evening",   slots: allowedSlots.filter((t) => t >= "17:00" && t < "20:00") },
+    { label: "Night",     slots: allowedSlots.filter((t) => t >= "20:00") },
+  ].filter(s => s.slots.length > 0);
 
   return (
     <div className="relative">
@@ -107,7 +111,9 @@ const CompactTimePicker = ({
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           {/* Dropdown panel */}
           <div className="absolute left-0 top-10 z-20 w-72 bg-white border border-border rounded-xl shadow-lg p-3 space-y-3 max-h-64 overflow-y-auto">
-            {TIME_SECTIONS.map(({ label, slots }) => (
+            {sections.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center italic py-2">No time slots available.</p>
+            ) : sections.map(({ label, slots }) => (
               <div key={label}>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
                   {label}
@@ -251,35 +257,43 @@ const defaultCategories = (): PersonCategoryEntry[] =>
 const totalPersons = (cats: PersonCategoryEntry[]) =>
   cats.reduce((s, c) => s + (Number(c.count) || 0), 0);
 
+function parseTemplateTime(tTime: string): string {
+  const match = tTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return tTime;
+  let h = parseInt(match[1]);
+  const mn = match[2].padStart(2, "0");
+  const pm = match[3].toUpperCase() === "PM";
+  if (pm && h < 12) h += 12;
+  if (!pm && h === 12) h = 0;
+  
+  // round to nearest 30-min slot
+  const mNum = parseInt(mn);
+  const mRounded = mNum < 15 ? "00" : mNum < 45 ? "30" : "00";
+  const hFinal = mNum >= 45 ? h + 1 : h;
+  return `${pad(hFinal % 24)}:${mRounded}`;
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
-const ServiceMenuBuilder = ({ services, onChange }: ServiceMenuBuilderProps) => {
+const ServiceMenuBuilder = ({ services, onChange, startTime, endTime }: ServiceMenuBuilderProps) => {
   const { serviceTemplates } = useMasterData();
   const [manualInputs, setManualInputs] = useState<Record<number, string>>({});
 
-  const sortedTemplates = [...serviceTemplates].sort((a, b) => b.usageCount - a.usageCount);
+  const sortedTemplates = [...serviceTemplates]
+    .filter((t) => {
+      if (!startTime && !endTime) return true;
+      const tTime = parseTemplateTime(t.defaultTime);
+      if (startTime && tTime < startTime) return false;
+      if (endTime && tTime > endTime) return false;
+      return true;
+    })
+    .sort((a, b) => b.usageCount - a.usageCount);
 
   const addService = (template?: typeof serviceTemplates[0]) => {
     onChange([
       ...services,
       {
         name: template?.name || "",
-        time: template?.defaultTime
-          ? (() => {
-              // convert "07:15 AM" → "07:15" format (HH:MM 24hr) for slot matching
-              const match = template.defaultTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-              if (!match) return template.defaultTime;
-              let h = parseInt(match[1]);
-              const mn = match[2].padStart(2, "0");
-              const pm = match[3].toUpperCase() === "PM";
-              if (pm && h < 12) h += 12;
-              if (!pm && h === 12) h = 0;
-              // round to nearest 30-min slot
-              const mNum = parseInt(mn);
-              const mRounded = mNum < 15 ? "00" : mNum < 45 ? "30" : "00";
-              const hFinal = mNum >= 45 ? h + 1 : h;
-              return `${pad(hFinal % 24)}:${mRounded}`;
-            })()
-          : "",
+        time: template?.defaultTime ? parseTemplateTime(template.defaultTime) : "",
         menuItems: [],
         personCategories: defaultCategories(),
       },
@@ -359,7 +373,7 @@ const ServiceMenuBuilder = ({ services, onChange }: ServiceMenuBuilderProps) => 
               >
                 <Plus className="h-3 w-3" />
                 {t.name}
-                <span className="text-emerald-500 text-[10px]">@ {t.defaultTime}</span>
+                <span className="text-emerald-500 text-[10px]">@ {fmt12(parseTemplateTime(t.defaultTime))}</span>
               </button>
             ))}
           </div>
@@ -409,6 +423,8 @@ const ServiceMenuBuilder = ({ services, onChange }: ServiceMenuBuilderProps) => 
                     <CompactTimePicker
                       value={service.time}
                       onChange={(v) => updateService(idx, "time", v)}
+                      minTime={startTime}
+                      maxTime={endTime}
                     />
                   </div>
                 </div>

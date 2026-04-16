@@ -17,15 +17,9 @@ function makeSlots(fromH: number, fromM: number, toH: number, toM: number, step 
   return slots;
 }
 
-const ALL_SLOTS = makeSlots(6, 0, 23, 30);
+const ALL_SLOTS = makeSlots(0, 0, 23, 30);
 
-function fmt12(hhmm: string) {
-  if (!hhmm) return "";
-  const [h, m] = hhmm.split(":").map(Number);
-  const ampm = h < 12 ? "am" : "pm";
-  const h12 = h % 12 || 12;
-  return `${h12}:${pad(m)}${ampm}`;
-}
+import { fmt12 } from "@/lib/utils";
 
 function formatDateHeading(ds: string) {
   if (!ds) return "";

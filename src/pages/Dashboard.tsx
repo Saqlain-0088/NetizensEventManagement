@@ -3,6 +3,7 @@ import { CalendarDays, Users, CheckCircle2, XCircle, Clock, ArrowRight, Sparkles
 import { useEvents } from "@/context/EventContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { fmt12 } from "@/lib/utils";
 
 const Dashboard = () => {
   const { events } = useEvents();
@@ -98,7 +99,7 @@ const Dashboard = () => {
                   <div>
                     <p className="font-semibold text-foreground text-sm">{e.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {e.startTime} · {e.pax} guests · {e.hallName || e.occasion}
+                      {fmt12(e.startTime)} · {e.pax} guests · {e.hallName || e.occasion}
                     </p>
                   </div>
                 </div>

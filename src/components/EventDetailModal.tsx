@@ -6,6 +6,7 @@ import { Download, Share2, Mail, X, Loader2 } from "lucide-react";
 import { EventCard } from "@/components/EventCard";
 import type { EventData } from "@/data/mockEvents";
 import { useToast } from "@/hooks/use-toast";
+import { fmt12 } from "@/lib/utils";
 
 interface EventDetailModalProps {
   event: EventData | null;
@@ -92,7 +93,7 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
   const handleWhatsApp = useCallback(() => {
     if (!event) return;
     const text = encodeURIComponent(
-      `📋 *${event.title}*\n📍 ${event.hallName}\n📅 ${new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}\n⏰ ${event.startTime} – ${event.endTime}\n👥 ${event.pax} guests\n💰 ₹${event.ratePerPerson}/person\nStatus: ${event.status.toUpperCase()}`
+      `📋 *${event.title}*\n📍 ${event.hallName}\n📅 ${new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}\n⏰ ${fmt12(event.startTime)} – ${fmt12(event.endTime)}\n👥 ${event.pax} guests\n💰 ₹${event.ratePerPerson}/person\nStatus: ${event.status.toUpperCase()}`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
     toast({ title: "WhatsApp opened" });
@@ -102,7 +103,7 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
     if (!event) return;
     const subject = encodeURIComponent(`Event Details: ${event.title}`);
     const body = encodeURIComponent(
-      `Event: ${event.title}\nHall: ${event.hallName}\nDate: ${new Date(event.date).toLocaleDateString("en-IN")}\nTime: ${event.startTime} – ${event.endTime}\nGuests: ${event.pax}\nRate: ₹${event.ratePerPerson}/person\nStatus: ${event.status.toUpperCase()}`
+      `Event: ${event.title}\nHall: ${event.hallName}\nDate: ${new Date(event.date).toLocaleDateString("en-IN")}\nTime: ${fmt12(event.startTime)} – ${fmt12(event.endTime)}\nGuests: ${event.pax}\nRate: ₹${event.ratePerPerson}/person\nStatus: ${event.status.toUpperCase()}`
     );
     window.open(`mailto:?subject=${subject}&body=${body}`);
   }, [event]);

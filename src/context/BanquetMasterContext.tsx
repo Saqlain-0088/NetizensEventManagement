@@ -160,7 +160,7 @@ export const BanquetMasterProvider = ({ children }: { children: ReactNode }) => 
 
   // Hall
   const addHall = (h: Omit<Hall, "id" | "usageCount">) =>
-    setHalls((p) => [...p, { ...h, id: crypto.randomUUID(), usageCount: 0 }]);
+    setHalls((p) => [...p, { ...h, id: Math.random().toString(36).slice(2, 11), usageCount: 0 }]);
   const updateHall = (id: string, h: Partial<Hall>) =>
     setHalls((p) => p.map((x) => (x.id === id ? { ...x, ...h } : x)));
   const deleteHall = (id: string) => setHalls((p) => p.filter((x) => x.id !== id));
@@ -169,7 +169,7 @@ export const BanquetMasterProvider = ({ children }: { children: ReactNode }) => 
 
   // Package
   const addPackage = (pkg: Omit<Package, "id" | "usageCount">) =>
-    setPackages((p) => [...p, { ...pkg, id: crypto.randomUUID(), usageCount: 0 }]);
+    setPackages((p) => [...p, { ...pkg, id: Math.random().toString(36).slice(2, 11), usageCount: 0 }]);
   const updatePackage = (id: string, pkg: Partial<Package>) =>
     setPackages((p) => p.map((x) => (x.id === id ? { ...x, ...pkg } : x)));
   const deletePackage = (id: string) => setPackages((p) => p.filter((x) => x.id !== id));
@@ -178,7 +178,7 @@ export const BanquetMasterProvider = ({ children }: { children: ReactNode }) => 
 
   // Extra
   const addExtra = (e: Omit<ExtraService, "id" | "usageCount">) =>
-    setExtras((p) => [...p, { ...e, id: crypto.randomUUID(), usageCount: 0 }]);
+    setExtras((p) => [...p, { ...e, id: Math.random().toString(36).slice(2, 11), usageCount: 0 }]);
   const updateExtra = (id: string, e: Partial<ExtraService>) =>
     setExtras((p) => p.map((x) => (x.id === id ? { ...x, ...e } : x)));
   const deleteExtra = (id: string) => setExtras((p) => p.filter((x) => x.id !== id));

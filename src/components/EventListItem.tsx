@@ -1,6 +1,7 @@
 import { Clock, Users, ChevronRight, MapPin } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import type { EventData } from "@/data/mockEvents";
+import { fmt12 } from "@/lib/utils";
 
 interface EventListItemProps {
   event: EventData;
@@ -31,7 +32,7 @@ export const EventListItem = ({ event, onClick }: EventListItemProps) => (
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Clock className="w-3.5 h-3.5" />
-          {event.startTime}{event.endTime ? ` – ${event.endTime}` : ""}
+          {fmt12(event.startTime)}{event.endTime ? ` – ${fmt12(event.endTime)}` : ""}
         </span>
         <span className="flex items-center gap-1">
           <Users className="w-3.5 h-3.5" />

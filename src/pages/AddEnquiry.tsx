@@ -13,6 +13,7 @@ import type { EventStatus } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
 import ServiceMenuBuilder, { type ServiceEntry, PERSON_CATEGORIES } from "@/components/enquiry/ServiceMenuBuilder";
 import { CalendlyScheduler, AllPackages } from "@/components/enquiry/DateTimePicker";
+import { fmt12 } from "@/lib/utils";
 import {
   CalendarDays, User, Clock, Utensils, CheckCircle2,
   ArrowLeft, ArrowRight, Package, Sparkles, X, FileText, ChevronRight,
@@ -68,9 +69,18 @@ const AddEnquiry = () => {
     const tm: Record<string, string> = {
       "high-tea": "16:00", lunch: "12:30", dinner: "20:00", conference: "10:00", custom: "",
     };
+
+    let serviceTime = tm[p.timeType] || "";
+    // If event bounds are set, ensure service time is within them
+    if (form.startTime && form.endTime) {
+      if (serviceTime < form.startTime || serviceTime > form.endTime) {
+        serviceTime = form.startTime;
+      }
+    }
+
     setServices([{
       name: p.name,
-      time: tm[p.timeType] || "",
+      time: serviceTime,
       menuItems: pkgItems,
       personCategories: PERSON_CATEGORIES.map((c) => ({ category: c, count: "" })),
     }]);
@@ -115,7 +125,7 @@ const AddEnquiry = () => {
     const menuItemsMap: Record<string, string[]> = {};
     services.forEach((s) => { if (s.name && s.menuItems.length > 0) menuItemsMap[s.name] = s.menuItems; });
     addEvent({
-      id: crypto.randomUUID(), title: form.title, customerName: form.customerName,
+      id: Math.random().toString(36).slice(2, 11), title: form.title, customerName: form.customerName,
       customerPhone: form.customerPhone, customerEmail: form.customerEmail || undefined,
       occasion: form.occasion, hallName: form.hallName, date: form.date,
       startTime: form.startTime, endTime: form.endTime, pax: Number(form.pax),
@@ -407,7 +417,7 @@ const AddEnquiry = () => {
                   />
                   <ReviewRow
                     label="Time"
-                    value={form.startTime && form.endTime ? `${form.startTime} – ${form.endTime}` : "—"}
+                    value={form.startTime && form.endTime ? `${fmt12(form.startTime)} – ${fmt12(form.endTime)}` : "—"}
                   />
                   <ReviewRow label="PAX" value={form.pax ? `${form.pax} guests` : "—"} />
                   <ReviewRow label="Rate/Person" value={form.ratePerPerson ? `₹${form.ratePerPerson}` : "—"} />
@@ -419,7 +429,7 @@ const AddEnquiry = () => {
                     {services.filter((s) => s.name).map((s, i) => (
                       <div key={i} className="flex items-center justify-between text-sm">
                         <span className="font-medium text-foreground">{s.name}</span>
-                        <span className="text-muted-foreground">{s.time} · {s.menuItems.length} items</span>
+                        <span className="text-muted-foreground">{fmt12(s.time)} · {s.menuItems.length} items</span>
                       </div>
                     ))}
                   </div>

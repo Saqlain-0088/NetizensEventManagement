@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import type { EventData } from "@/data/mockEvents";
+import { fmt12 } from "@/lib/utils";
 
 interface EventCardProps {
   event: EventData;
@@ -105,7 +106,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
           <div style={{ width: "1px", height: "36px", background: "rgba(255,255,255,0.2)" }} />
           <div>
             <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "11px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase" }}>Time</p>
-            <p style={{ color: "#FFFFFF", fontSize: "18px", fontWeight: 700, marginTop: "4px" }}>{event.startTime} – {event.endTime}</p>
+            <p style={{ color: "#FFFFFF", fontSize: "18px", fontWeight: 700, marginTop: "4px" }}>{fmt12(event.startTime)} – {fmt12(event.endTime)}</p>
           </div>
           <div style={{ width: "1px", height: "36px", background: "rgba(255,255,255,0.2)" }} />
           <div>
@@ -153,7 +154,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
                   width: "100%",
                 }}>
                   <span style={{ fontSize: "16px", fontWeight: 600, color: "#1E1B4B" }}>{s.name}</span>
-                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#7C3AED", background: "#EDE9FE", padding: "4px 14px", borderRadius: "20px", whiteSpace: "nowrap", marginLeft: "12px" }}>{s.time}</span>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#7C3AED", background: "#EDE9FE", padding: "4px 14px", borderRadius: "20px", whiteSpace: "nowrap", marginLeft: "12px" }}>{fmt12(s.time)}</span>
                 </div>
               ))}
             </div>
