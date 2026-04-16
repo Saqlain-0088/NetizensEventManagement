@@ -9,6 +9,7 @@ import { DateFilter, type DateRange } from "@/components/DateFilter";
 
 const Dashboard = () => {
   const { events } = useEvents();
+  const navigate = useNavigate();
   const [dateRange, setDateRange] = useState<DateRange>({});
 
   const filteredEvents = events.filter((e) => {
