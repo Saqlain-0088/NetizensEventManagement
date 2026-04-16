@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { EventStatus } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
+import ExpenseSummaryPanel from "@/components/enquiry/ExpenseSummaryPanel";
 import ServiceMenuBuilder, { type ServiceEntry, PERSON_CATEGORIES } from "@/components/enquiry/ServiceMenuBuilder";
 import { CalendlyScheduler, AllPackages } from "@/components/enquiry/DateTimePicker";
 import { fmt12 } from "@/lib/utils";
@@ -41,6 +42,8 @@ const AddEnquiry = () => {
     title: "", customerName: "", customerPhone: "", customerEmail: "",
     occasion: "", hallName: "", date: "", startTime: "", endTime: "",
     pax: "", ratePerPerson: "", status: "tentative" as EventStatus, notes: "",
+    taxPercent: "18", advanceAmount: "", 
+    manualExtraFoodAmount: "", manualExtraEquipmentAmount: "", additionalExpenses: ""
   });
   const [services, setServices] = useState<ServiceEntry[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -131,10 +134,12 @@ const AddEnquiry = () => {
       customerPhone: form.customerPhone, customerEmail: form.customerEmail || undefined,
       occasion: form.occasion, hallName: form.hallName, date: form.date,
       startTime: form.startTime, endTime: form.endTime, pax: Number(form.pax),
-      ratePerPerson: Number(form.ratePerPerson), advanceAmount: undefined, taxPercent: undefined,
+      ratePerPerson: Number(form.ratePerPerson), 
+      advanceAmount: Number(form.advanceAmount) || undefined, 
+      taxPercent: Number(form.taxPercent) || undefined,
       services: eventServices, menuItems: menuItemsMap, status: form.status,
       assignedStaff: undefined, notes: form.notes || undefined,
-      rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}`,
+      rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}\nEXTRA FOOD (MANUAL): ${form.manualExtraFoodAmount}\nEXTRA EQ (MANUAL): ${form.manualExtraEquipmentAmount}\nOTHER EXPENSES: ${form.additionalExpenses}`,
     });
     toast({ title: "Enquiry created!", description: "The event has been saved." });
     navigate("/events");
@@ -394,6 +399,23 @@ const AddEnquiry = () => {
                   )}
                 </div>
 
+                {/* Expense Module */}
+                <ExpenseSummaryPanel 
+                  pax={Number(form.pax) || 0}
+                  ratePerPerson={Number(form.ratePerPerson) || 0}
+                  taxPercent={Number(form.taxPercent) || 0}
+                  advanceAmount={Number(form.advanceAmount) || 0}
+                  extrasTotal={extrasTotal}
+                  manualExtraFoodAmount={Number(form.manualExtraFoodAmount) || 0}
+                  onManualExtraFoodChange={(v) => update("manualExtraFoodAmount", String(v))}
+                  manualExtraEquipmentAmount={Number(form.manualExtraEquipmentAmount) || 0}
+                  onManualExtraEquipmentChange={(v) => update("manualExtraEquipmentAmount", String(v))}
+                  additionalExpenses={Number(form.additionalExpenses) || 0}
+                  onAdditionalExpensesChange={(v) => update("additionalExpenses", String(v))}
+                  onTaxPercentChange={(v) => update("taxPercent", String(v))}
+                  onAdvanceAmountChange={(v) => update("advanceAmount", String(v))}
+                />
+
                 {/* Notes */}
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
@@ -433,6 +455,8 @@ const AddEnquiry = () => {
                   />
                   <ReviewRow label="PAX" value={form.pax ? `${form.pax} guests` : "—"} />
                   <ReviewRow label="Rate/Person" value={form.ratePerPerson ? `₹${form.ratePerPerson}` : "—"} />
+                  <ReviewRow label="Advance Paid" value={form.advanceAmount ? `₹${form.advanceAmount}` : "None"} />
+                  <ReviewRow label="Tax" value={form.taxPercent ? `${form.taxPercent}%` : "None"} />
                 </div>
 
                 {services.filter((s) => s.name).length > 0 && (
