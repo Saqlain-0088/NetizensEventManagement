@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useEvents } from "@/context/EventContext";
 import { useMasterData } from "@/context/MasterDataContext";
 import { useBanquetMaster } from "@/context/BanquetMasterContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { EventStatus } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
@@ -32,6 +33,7 @@ const AddEnquiry = () => {
   const { addEvent } = useEvents();
   const { occasions, addOccasion, removeOccasion, incrementUsage, menuItems } = useMasterData();
   const { packages, halls, extras } = useBanquetMaster();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const [step, setStep] = useState(1);
@@ -138,7 +140,12 @@ const AddEnquiry = () => {
     navigate("/events");
   };
 
-  const activeHalls = halls.filter((h) => h.active);
+  const activeHalls = halls.filter((h) => {
+    if (!h.active) return false;
+    if (user?.allowedVenues?.includes("all")) return true;
+    return user?.allowedVenues?.includes(h.name);
+  });
+
   const activeExtrasFood = extras.filter((e) => e.active && e.type === "food");
   const activeExtrasEq   = extras.filter((e) => e.active && e.type === "equipment");
   const curStep = STEPS[step - 1];
@@ -229,6 +236,11 @@ const AddEnquiry = () => {
                           </span>
                         </SelectItem>
                       ))}
+                      {activeHalls.length === 0 && (
+                        <div className="py-2 px-3 text-xs text-muted-foreground text-center">
+                          No venues assigned or available.
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                   {errors.hallName && <p className="text-xs text-red-500 mt-0.5">{errors.hallName}</p>}

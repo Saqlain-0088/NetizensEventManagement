@@ -7,6 +7,7 @@ import { EventDetailModal } from "@/components/EventDetailModal";
 import { useEvents } from "@/context/EventContext";
 import { useNavigate } from "react-router-dom";
 import type { EventData, EventStatus } from "@/data/mockEvents";
+import { DateFilter, type DateRange } from "@/components/DateFilter";
 
 const statusFilters: { label: string; value: EventStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -27,6 +28,7 @@ const Events = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<EventStatus | "all">("all");
+  const [dateRange, setDateRange] = useState<DateRange>({});
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
 
   const filtered = events.filter((e) => {
@@ -34,7 +36,16 @@ const Events = () => {
       e.title.toLowerCase().includes(search.toLowerCase()) ||
       e.customerName.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesDate = (() => {
+      if (!dateRange.from && !dateRange.to) return true;
+      const d = new Date(e.date);
+      d.setHours(0, 0, 0, 0);
+      if (dateRange.from && d < dateRange.from) return false;
+      if (dateRange.to && d > dateRange.to) return false;
+      return true;
+    })();
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (
@@ -65,6 +76,7 @@ const Events = () => {
             className="pl-10 bg-white border-border h-10"
           />
         </div>
+        <DateFilter value={dateRange} onChange={setDateRange} className="w-full sm:w-[220px]" />
         <div className="flex gap-2 flex-wrap">
           {statusFilters.map((f) => {
             const isActive = statusFilter === f.value;

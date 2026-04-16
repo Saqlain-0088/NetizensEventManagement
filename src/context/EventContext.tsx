@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { mockEvents, type EventData } from "@/data/mockEvents";
+import { useAuth } from "@/context/AuthContext";
 
 interface EventContextType {
   events: EventData[];
@@ -25,5 +26,14 @@ export const EventProvider = ({ children }: { children: ReactNode }) => {
 export const useEvents = () => {
   const ctx = useContext(EventContext);
   if (!ctx) throw new Error("useEvents must be used within EventProvider");
-  return ctx;
+
+  const { user } = useAuth();
+  
+  // Apply RBAC filtering. If user has 'all', they see everything. Otherwise just their venues.
+  // We use `event.hallName` which matches the venue names (e.g. "THE PALACE").
+  const filteredEvents = user?.allowedVenues?.includes("all")
+    ? ctx.events
+    : ctx.events.filter((e) => user?.allowedVenues?.includes(e.hallName));
+
+  return { ...ctx, events: filteredEvents };
 };

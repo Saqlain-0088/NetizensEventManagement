@@ -9,6 +9,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { EventProvider } from "@/context/EventContext";
 import { MasterDataProvider } from "@/context/MasterDataContext";
 import { BanquetMasterProvider } from "@/context/BanquetMasterContext";
+import { useAuth } from "@/context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
@@ -19,6 +20,7 @@ import HallMaster from "./pages/masters/HallMaster";
 import PackageMaster from "./pages/masters/PackageMaster";
 import MenuMaster from "./pages/masters/MenuMaster";
 import ExtrasMaster from "./pages/masters/ExtrasMaster";
+import UserMaster from "./pages/masters/UserMaster";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,12 @@ const Protected = ({ children }: { children: React.ReactNode }) => (
     <AppLayout>{children}</AppLayout>
   </ProtectedRoute>
 );
+
+const AdminProtected = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  if (user?.role !== "admin") return <Navigate to="/" replace />;
+  return <Protected>{children}</Protected>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -47,11 +55,12 @@ const App = () => (
                   <Route path="/" element={<Protected><Dashboard /></Protected>} />
                   <Route path="/events" element={<Protected><Events /></Protected>} />
                   <Route path="/add-enquiry" element={<Protected><AddEnquiry /></Protected>} />
-                  <Route path="/masters" element={<Protected><MastersHub /></Protected>} />
-                  <Route path="/masters/halls" element={<Protected><HallMaster /></Protected>} />
-                  <Route path="/masters/packages" element={<Protected><PackageMaster /></Protected>} />
-                  <Route path="/masters/menu" element={<Protected><MenuMaster /></Protected>} />
-                  <Route path="/masters/extras" element={<Protected><ExtrasMaster /></Protected>} />
+                  <Route path="/masters" element={<AdminProtected><MastersHub /></AdminProtected>} />
+                  <Route path="/masters/halls" element={<AdminProtected><HallMaster /></AdminProtected>} />
+                  <Route path="/masters/packages" element={<AdminProtected><PackageMaster /></AdminProtected>} />
+                  <Route path="/masters/menu" element={<AdminProtected><MenuMaster /></AdminProtected>} />
+                  <Route path="/masters/extras" element={<AdminProtected><ExtrasMaster /></AdminProtected>} />
+                  <Route path="/masters/users" element={<AdminProtected><UserMaster /></AdminProtected>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </EventProvider>

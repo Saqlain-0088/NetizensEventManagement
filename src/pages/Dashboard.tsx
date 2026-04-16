@@ -1,23 +1,34 @@
 import { CalendarDays, Users, CheckCircle2, XCircle, Clock, ArrowRight, Sparkles } from "lucide-react";
 // HIDDEN (temporary): TrendingUp (revenue banner icon)
+import { useState } from "react";
 import { useEvents } from "@/context/EventContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { fmt12 } from "@/lib/utils";
+import { DateFilter, type DateRange } from "@/components/DateFilter";
 
 const Dashboard = () => {
   const { events } = useEvents();
-  const navigate = useNavigate();
+  const [dateRange, setDateRange] = useState<DateRange>({});
 
-  const confirmed = events.filter((e) => e.status === "confirmed").length;
-  const tentative = events.filter((e) => e.status === "tentative").length;
-  const cancelled = events.filter((e) => e.status === "cancelled").length;
-  const totalPax = events
+  const filteredEvents = events.filter((e) => {
+    if (!dateRange.from && !dateRange.to) return true;
+    const d = new Date(e.date);
+    d.setHours(0, 0, 0, 0);
+    if (dateRange.from && d < dateRange.from) return false;
+    if (dateRange.to && d > dateRange.to) return false;
+    return true;
+  });
+
+  const confirmed = filteredEvents.filter((e) => e.status === "confirmed").length;
+  const tentative = filteredEvents.filter((e) => e.status === "tentative").length;
+  const cancelled = filteredEvents.filter((e) => e.status === "cancelled").length;
+  const totalPax = filteredEvents
     .filter((e) => e.status !== "cancelled")
     .reduce((s, e) => s + e.pax, 0);
 
-  const upcoming = events
-    .filter((e) => e.status !== "cancelled" && new Date(e.date) >= new Date())
+  const upcoming = filteredEvents
+    .filter((e) => e.status !== "cancelled" && new Date(e.date) >= new Date(new Date().setHours(0, 0, 0, 0)))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 5);
 
@@ -27,25 +38,28 @@ const Dashboard = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             Good day <span>👋</span>
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">Here's what's happening with your events</p>
         </div>
-        <Button
-          onClick={() => navigate("/add-enquiry")}
-          className="gradient-primary text-white border-0 shadow-md glow-primary hover:opacity-90 gap-2"
-        >
-          <Sparkles className="w-4 h-4" />
-          New Enquiry
-        </Button>
+        <div className="flex flex-wrap items-center gap-3 mt-2 sm:mt-0">
+          <DateFilter value={dateRange} onChange={setDateRange} className="w-full sm:w-56" />
+          <Button
+            onClick={() => navigate("/add-enquiry")}
+            className="gradient-primary text-white border-0 shadow-md glow-primary hover:opacity-90 gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">New Enquiry</span>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard icon={CalendarDays} label="Total Events" value={events.length} iconBg="bg-blue-100" iconColor="text-blue-600" valueColor="text-blue-700" />
+        <StatCard icon={CalendarDays} label="Total Events" value={filteredEvents.length} iconBg="bg-blue-100" iconColor="text-blue-600" valueColor="text-blue-700" />
         <StatCard icon={CheckCircle2} label="Confirmed" value={confirmed} iconBg="bg-emerald-100" iconColor="text-emerald-600" valueColor="text-emerald-700" />
         <StatCard icon={Clock} label="Tentative" value={tentative} iconBg="bg-amber-100" iconColor="text-amber-600" valueColor="text-amber-700" />
         <StatCard icon={XCircle} label="Cancelled" value={cancelled} iconBg="bg-red-100" iconColor="text-red-600" valueColor="text-red-700" />

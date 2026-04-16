@@ -51,7 +51,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-2 flex-shrink-0">
               {user && (
                 <span className="hidden sm:block text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-lg capitalize">
-                  {user}
+                  {user.username} <span className="opacity-70">({user.role})</span>
                 </span>
               )}
               <button

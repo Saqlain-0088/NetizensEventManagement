@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Building2, Package, Utensils, Sparkles, ArrowRight } from "lucide-react";
+import { Building2, Package, Utensils, Sparkles, ArrowRight, Users } from "lucide-react";
 import { useBanquetMaster } from "@/context/BanquetMasterContext";
 import { useMasterData } from "@/context/MasterDataContext";
+import { useAuth } from "@/context/AuthContext";
 
 const cards = [
   {
@@ -36,14 +37,23 @@ const cards = [
     border: "border-amber-200 hover:border-amber-400",
     path: "/masters/extras",
   },
+  {
+    title: "User Access (RBAC)",
+    description: "Manage system users, roles, and venue assignments",
+    icon: Users,
+    color: "bg-indigo-100 text-indigo-600",
+    border: "border-indigo-200 hover:border-indigo-400",
+    path: "/masters/users",
+  },
 ];
 
 export default function MastersHub() {
   const navigate = useNavigate();
   const { halls, packages, extras } = useBanquetMaster();
   const { menuItems } = useMasterData();
+  const { users } = useAuth(); // NEW
 
-  const counts = [halls.length, packages.length, menuItems.length, extras.length];
+  const counts = [halls.length, packages.length, menuItems.length, extras.length, users.length]; // added users.length
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">

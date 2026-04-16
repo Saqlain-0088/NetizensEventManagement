@@ -16,10 +16,11 @@ const items = [
   { title: "Dashboard",   url: "/",            icon: LayoutDashboard },
   { title: "Event List",  url: "/events",       icon: CalendarDays    },
   { title: "Add Enquiry", url: "/add-enquiry",  icon: PlusCircle      },
-  { title: "Masters",     url: "/masters",      icon: Database        },
+  { title: "Masters",     url: "/masters",      icon: Database, adminOnly: true },
 ];
 
 export function AppSidebar() {
+  const { user } = useAuth();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
@@ -54,6 +55,7 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1 px-2">
               {items.map((item) => {
                 const active = isActive(item.url);
+                if (item.adminOnly && user?.role !== "admin") return null;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
