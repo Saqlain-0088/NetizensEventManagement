@@ -55,6 +55,7 @@ const App = () => (
                   <Route path="/" element={<Protected><Dashboard /></Protected>} />
                   <Route path="/events" element={<Protected><Events /></Protected>} />
                   <Route path="/add-enquiry" element={<Protected><AddEnquiry /></Protected>} />
+                  <Route path="/edit-enquiry/:id" element={<Protected><AddEnquiry /></Protected>} />
                   <Route path="/masters" element={<AdminProtected><MastersHub /></AdminProtected>} />
                   <Route path="/masters/halls" element={<AdminProtected><HallMaster /></AdminProtected>} />
                   <Route path="/masters/packages" element={<AdminProtected><PackageMaster /></AdminProtected>} />

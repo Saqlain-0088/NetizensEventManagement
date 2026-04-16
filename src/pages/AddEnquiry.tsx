@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +31,10 @@ const STEPS = [
 
 const AddEnquiry = () => {
   const navigate = useNavigate();
-  const { addEvent } = useEvents();
+  const { id } = useParams<{ id: string }>();
+  const isEdit = !!id;
+  
+  const { events, addEvent, updateEvent } = useEvents();
   const { occasions, addOccasion, removeOccasion, incrementUsage, menuItems } = useMasterData();
   const { packages, halls, extras } = useBanquetMaster();
   const { user } = useAuth();
@@ -54,6 +57,48 @@ const AddEnquiry = () => {
     setForm((p) => ({ ...p, [field]: value }));
     if (errors[field]) setErrors((p) => ({ ...p, [field]: "" }));
   };
+
+  useEffect(() => {
+    if (isEdit && id) {
+      const existing = events.find((e) => e.id === id);
+      if (existing) {
+        setForm({
+          title: existing.title,
+          customerName: existing.customerName,
+          customerPhone: existing.customerPhone || "",
+          customerEmail: existing.customerEmail || "",
+          occasion: existing.occasion,
+          hallName: existing.hallName,
+          date: existing.date,
+          startTime: existing.startTime,
+          endTime: existing.endTime,
+          pax: String(existing.pax),
+          ratePerPerson: String(existing.ratePerPerson),
+          status: existing.status,
+          notes: existing.notes || "",
+          taxPercent: existing.taxPercent ? String(existing.taxPercent) : "18",
+          advanceAmount: existing.advanceAmount ? String(existing.advanceAmount) : "",
+          // Extract manual expenses if present in rawDescription (naive fallback if no dedicated DB fields)
+          manualExtraFoodAmount: "", 
+          manualExtraEquipmentAmount: "", 
+          additionalExpenses: ""
+        });
+        
+        // Populate services
+        if (existing.services) {
+           const srvs: ServiceEntry[] = existing.services.map(s => {
+             return {
+               name: s.name,
+               time: s.time,
+               menuItems: existing.menuItems?.[s.name] || [],
+               personCategories: PERSON_CATEGORIES.map((c) => ({ category: c, count: "" })),
+             };
+           });
+           setServices(srvs);
+        }
+      }
+    }
+  }, [id, isEdit, events]);
 
   // ── Package selection ─────────────────────────────────────────────────────
   const applyPackage = (pkg: typeof packages[0] | { id: null }) => {
@@ -129,8 +174,8 @@ const AddEnquiry = () => {
     const eventServices = services.filter((s) => s.name.trim()).map((s) => ({ name: s.name, time: s.time }));
     const menuItemsMap: Record<string, string[]> = {};
     services.forEach((s) => { if (s.name && s.menuItems.length > 0) menuItemsMap[s.name] = s.menuItems; });
-    addEvent({
-      id: Math.random().toString(36).slice(2, 11), title: form.title, customerName: form.customerName,
+    const payload = {
+      title: form.title, customerName: form.customerName,
       customerPhone: form.customerPhone, customerEmail: form.customerEmail || undefined,
       occasion: form.occasion, hallName: form.hallName, date: form.date,
       startTime: form.startTime, endTime: form.endTime, pax: Number(form.pax),
@@ -140,8 +185,16 @@ const AddEnquiry = () => {
       services: eventServices, menuItems: menuItemsMap, status: form.status,
       assignedStaff: undefined, notes: form.notes || undefined,
       rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}\nEXTRA FOOD (MANUAL): ${form.manualExtraFoodAmount}\nEXTRA EQ (MANUAL): ${form.manualExtraEquipmentAmount}\nOTHER EXPENSES: ${form.additionalExpenses}`,
-    });
-    toast({ title: "Enquiry created!", description: "The event has been saved." });
+    };
+
+    if (isEdit && id) {
+      updateEvent(id, payload);
+      toast({ title: "Enquiry updated!", description: "The event changes have been saved." });
+    } else {
+      addEvent({ ...payload, id: Math.random().toString(36).slice(2, 11) });
+      toast({ title: "Enquiry created!", description: "The event has been saved." });
+    }
+    
     navigate("/events");
   };
 
@@ -168,7 +221,7 @@ const AddEnquiry = () => {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">New Enquiry</h1>
+            <h1 className="text-2xl font-bold text-foreground">{isEdit ? "Edit Enquiry" : "New Enquiry"}</h1>
             <p className="text-sm text-muted-foreground">Step {step} of {STEPS.length} — {curStep.desc}</p>
           </div>
         </div>
@@ -517,7 +570,7 @@ const AddEnquiry = () => {
             ) : (
               <Button type="button" onClick={handleSubmit}
                 className="gradient-primary text-white border-0 shadow-md glow-primary hover:opacity-90 gap-2 px-8">
-                <CheckCircle2 className="w-4 h-4" />Create Enquiry
+                <CheckCircle2 className="w-4 h-4" />{isEdit ? "Save Changes" : "Create Enquiry"}
               </Button>
             )}
           </div>

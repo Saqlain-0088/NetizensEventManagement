@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 interface EventContextType {
   events: EventData[];
   addEvent: (event: EventData) => void;
+  updateEvent: (id: string, updates: Partial<EventData>) => void;
 }
 
 const EventContext = createContext<EventContextType | undefined>(undefined);
@@ -16,8 +17,12 @@ export const EventProvider = ({ children }: { children: ReactNode }) => {
     setEvents((prev) => [event, ...prev]);
   };
 
+  const updateEvent = (id: string, updates: Partial<EventData>) => {
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
+  };
+
   return (
-    <EventContext.Provider value={{ events, addEvent }}>
+    <EventContext.Provider value={{ events, addEvent, updateEvent }}>
       {children}
     </EventContext.Provider>
   );

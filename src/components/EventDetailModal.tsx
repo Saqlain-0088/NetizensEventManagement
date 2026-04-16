@@ -2,7 +2,8 @@ import { useRef, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Share2, Mail, X, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Download, Share2, Mail, X, Loader2, Edit } from "lucide-react";
 import { EventCard } from "@/components/EventCard";
 import type { EventData } from "@/data/mockEvents";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,7 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
   const previewRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleDownload = useCallback(async () => {
     if (!event) return;
@@ -133,6 +135,14 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
                 : <><Download className="w-3.5 h-3.5" /> Download PNG</>
               }
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate(`/edit-enquiry/${event.id}`)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm gap-1.5 h-8 text-xs border-0"
+            >
+              <Edit className="w-3.5 h-3.5" />
+              Edit Enquiry
             </Button>
             <Button size="sm" variant="outline" onClick={handleWhatsApp} className="h-8 text-xs gap-1.5 border-border">
               <Share2 className="w-3.5 h-3.5" />
