@@ -93,6 +93,7 @@ const ExpenseSummaryPanel = ({
               placeholder="e.g. 1000"
               className="bg-white"
             />
+          </div>
           <div className="space-y-1.5 pt-2 border-t border-border">
             <Label className="text-xs font-semibold text-muted-foreground uppercase text-left w-full block">Tax Percentage (%)</Label>
             <Input 
