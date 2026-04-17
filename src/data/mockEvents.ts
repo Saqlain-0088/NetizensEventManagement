@@ -49,9 +49,9 @@ export function hasSlotConflict(
 
   return existingEvents.some((e) => {
     if (excludeId && e.id === excludeId) return false;
-    if (e.hallName !== hallName)        return false;
+    if (e.hallName !== hallName)       return false;
     if (e.date !== date)               return false;
-    if (e.status !== "confirmed")      return false; // only confirmed slots are locked
+    if (e.status === "cancelled")      return false; // active slots (draft, tentative, confirmed) are locked
     const eStart = toMins(e.startTime);
     const eEnd   = toMins(e.endTime);
     // Overlap when: newStart < eEnd AND newEnd > eStart
