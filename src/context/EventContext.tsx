@@ -19,7 +19,12 @@ const EventContext = createContext<EventContextType | undefined>(undefined);
 export const EventProvider = ({ children }: { children: ReactNode }) => {
   const [events, setEvents] = useState<EventData[]>(() => {
     const saved = localStorage.getItem("app_events");
-    return saved ? JSON.parse(saved) : mockEvents;
+    if (saved) {
+      const parsed: EventData[] = JSON.parse(saved);
+      // Migrate: ensure every event has selectedExtras (added later)
+      return parsed.map(e => ({ selectedExtras: [], ...e }));
+    }
+    return mockEvents;
   });
 
   useEffect(() => {

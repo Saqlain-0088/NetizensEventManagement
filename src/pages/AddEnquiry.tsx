@@ -92,15 +92,16 @@ const AddEnquiry = () => {
         
         // Populate services
         if (existing.services) {
-           const srvs: ServiceEntry[] = existing.services.map(s => {
-             return {
-               name: s.name,
-               time: s.time,
-               menuItems: existing.menuItems?.[s.name] || [],
-               personCategories: PERSON_CATEGORIES.map((c) => ({ category: c, count: "" })),
-             };
-           });
-           setServices(srvs);
+          const srvs: ServiceEntry[] = existing.services.map(s => ({
+            name: s.name,
+            time: s.time,
+            menuItems: existing.menuItems?.[s.name] || [],
+            personCategories: PERSON_CATEGORIES.map((c) => ({ category: c, count: "" })),
+          }));
+          setServices(srvs);
+        }
+        if (existing.selectedExtras) {
+          setSelectedExtras(existing.selectedExtras);
         }
       }
     }
@@ -211,6 +212,7 @@ const AddEnquiry = () => {
       isEditable: resolvedStatus !== "confirmed",
       createdBy: user?.username || "unknown",
       assignedStaff: undefined, notes: form.notes || undefined,
+      selectedExtras: selectedExtras,
       rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}\nEXTRA FOOD (MANUAL): ${form.manualExtraFoodAmount}\nEXTRA EQ (MANUAL): ${form.manualExtraEquipmentAmount}\nOTHER EXPENSES: ${form.additionalExpenses}`,
     };
 

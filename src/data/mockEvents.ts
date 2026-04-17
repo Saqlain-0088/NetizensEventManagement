@@ -27,6 +27,7 @@ export interface EventData {
   createdBy: string;          // username of creator
   assignedStaff?: string;
   notes?: string;
+  selectedExtras?: string[];  // optional for backward compat, treated as []
   rawDescription: string;
 }
 
@@ -87,6 +88,7 @@ export const mockEvents: EventData[] = [
     isEditable: false,
     createdBy: "admin",
     assignedStaff: "Priya",
+    selectedExtras: [],
     notes: "VIP client, extra care on presentation",
     rawDescription: "NAME: Rahul Shah\nPAX: 50\nOCCASION: Corporate\nRATE: 600\nMENU: Tea + Lunch\nTIME: 7:00 AM – 10:00 AM\nCONFIRMED",
   },
@@ -120,6 +122,7 @@ export const mockEvents: EventData[] = [
     isEditable: true,
     createdBy: "admin",
     assignedStaff: "Amit",
+    selectedExtras: [],
     rawDescription: "NAME: Meera Patel\nPAX: 200\nOCCASION: Wedding\nRATE: 1200\nTIME: 6:00 PM – 11:00 PM",
   },
   {
@@ -147,6 +150,7 @@ export const mockEvents: EventData[] = [
     isEditable: true,
     createdBy: "admin",
     assignedStaff: "Ravi",
+    selectedExtras: [],
     notes: "Cancelled due to venue conflict",
     rawDescription: "NAME: Sneha Kumar\nPAX: 30\nOCCASION: Birthday\nRATE: 800\nTIME: 4:00 PM – 8:00 PM\nCANCELLED",
   },
