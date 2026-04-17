@@ -21,7 +21,9 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const role = roles.find(r => r.id === user?.roleId);
+  const isAdmin = role?.permissions.canView && role?.permissions.canAdd && role?.permissions.canEdit && role?.permissions.canDelete;
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
@@ -56,7 +58,7 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1 px-2">
               {items.map((item) => {
                 const active = isActive(item.url);
-                if (item.adminOnly && user?.role !== "admin") return null;
+                if (item.adminOnly && !isAdmin) return null;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
