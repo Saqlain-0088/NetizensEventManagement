@@ -401,12 +401,13 @@ const AddEnquiry = () => {
                 {/* Calendly-style date + time picker */}
                 <CalendlyScheduler
                   date={form.date}
-                  onDateChange={(v) => update("date", v)}
+                  onDateChange={(v) => { update("date", v); update("startTime", ""); update("endTime", ""); }}
                   startTime={form.startTime}
                   onStartTimeChange={(v) => { update("startTime", v); if (form.endTime && v >= form.endTime) update("endTime", ""); }}
                   endTime={form.endTime}
                   onEndTimeChange={(v) => update("endTime", v)}
                   errors={{ date: errors.date, startTime: errors.startTime, endTime: errors.endTime }}
+                  isSlotBooked={(t, nextT) => checkSlotConflict(form.hallName, form.date, t, nextT, isEdit ? id : undefined)}
                 />
 
                 {/* PAX + Rate */}

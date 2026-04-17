@@ -40,6 +40,7 @@ export const CalendlyScheduler = ({
   startTime: string; onStartTimeChange: (v: string) => void;
   endTime: string; onEndTimeChange: (v: string) => void;
   errors?: { date?: string; startTime?: string; endTime?: string };
+  isSlotBooked?: (startTime: string, endTime: string) => boolean;
 }) => {
   const [cal, setCal] = useState(() => {
     const d = date ? new Date(date + "T00:00:00") : new Date();
@@ -213,24 +214,38 @@ export const CalendlyScheduler = ({
 
                 {/* Scrollable time slot list */}
                 <div ref={slotListRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5 max-h-[280px]">
-                  {slotsToShow.map((t) => {
+                  {slotsToShow.map((t, idx) => {
                     const isSelected = selectedInPhase === t;
                     const isPending = pendingSlot === t;
+                    // For the block duration check:
+                    let booked = false;
+                    if (isSlotBooked) {
+                      if (phase === "start") {
+                        const currentIdx = ALL_SLOTS.indexOf(t);
+                        const nextT = currentIdx < ALL_SLOTS.length - 1 ? ALL_SLOTS[currentIdx + 1] : "23:59";
+                        booked = isSlotBooked(t, nextT);
+                      } else {
+                        booked = isSlotBooked(startTime, t);
+                      }
+                    }
 
                     return (
                       <div key={t} className="flex gap-1.5">
                         <button
                           type="button"
+                          disabled={booked}
                           onClick={() => handleSlotClick(t)}
                           className={`flex-1 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all ${
-                            isSelected
+                            booked
+                              ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                              : isSelected
                               ? "bg-[#0069ff] text-white border-[#0069ff]"
                               : isPending
                               ? "bg-[#0069ff]/10 text-[#0069ff] border-[#0069ff]"
                               : "bg-white text-[#0069ff] border-[#0069ff]/30 hover:border-[#0069ff] hover:bg-blue-50"
                           }`}
                         >
-                          {fmt12(t)}
+                          {fmt12(t)} {booked && <span className="text-[10px] ml-1 font-normal opacity-80">(Booked)</span>}
                         </button>
 
                         {/* Confirm button (Calendly style) */}
