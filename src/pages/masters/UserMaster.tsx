@@ -14,13 +14,13 @@ type UserForm = AuthUser & { password: string };
 const empty = (): UserForm => ({
   username: "",
   password: "",
-  role: "staff",
-  allowedVenues: [],
+  roleId: "",
+  allowedProperties: [],
 });
 
 export default function UserMaster() {
-  const { users, addUser, updateUser, removeUser, user: currentUser } = useAuth();
-  const { halls } = useBanquetMaster();
+  const { users, roles, addUser, updateUser, removeUser, user: currentUser } = useAuth();
+  const { properties } = useBanquetMaster();
   const { toast } = useToast();
   
   const [search, setSearch] = useState("");
@@ -37,10 +37,11 @@ export default function UserMaster() {
   const handleSave = () => {
     if (!form.username.trim()) { toast({ title: "Username is required", variant: "destructive" }); return; }
     if (!editing && !form.password) { toast({ title: "Password is required", variant: "destructive" }); return; }
+    if (!form.roleId) { toast({ title: "Role is required", variant: "destructive" }); return; }
     
     // Admin role override
     const finalForm = { ...form };
-    if (finalForm.role === "admin") finalForm.allowedVenues = ["all"];
+    if (finalForm.roleId === "role_admin") finalForm.allowedProperties = ["all"];
 
     if (editing) {
       updateUser(editing.username, finalForm);
@@ -65,12 +66,12 @@ export default function UserMaster() {
     toast({ title: "User deleted" });
   };
 
-  const toggleVenue = (venue: string) => {
+  const toggleProperty = (propertyId: string) => {
     setForm(p => ({
       ...p,
-      allowedVenues: p.allowedVenues.includes(venue)
-        ? p.allowedVenues.filter(v => v !== venue)
-        : [...p.allowedVenues, venue]
+      allowedProperties: p.allowedProperties.includes(propertyId)
+        ? p.allowedProperties.filter(v => v !== propertyId)
+        : [...p.allowedProperties, propertyId]
     }));
   };
 
@@ -133,35 +134,36 @@ export default function UserMaster() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-muted-foreground uppercase">System Role</Label>
-                <Select value={form.role} onValueChange={(v: any) => setForm(p => ({ ...p, role: v }))}>
-                  <SelectTrigger className="bg-slate-50 border-border h-10">
-                    <SelectValue />
+                <Select value={form.roleId} onValueChange={(v: string) => setForm(p => ({ ...p, roleId: v }))}>
+                  <SelectTrigger className="bg-slate-50 border-border h-10 text-foreground">
+                    <SelectValue placeholder="Select a role..." />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-border">
-                    <SelectItem value="admin">Administrator (Full Access)</SelectItem>
-                    <SelectItem value="staff">Staff Manager (Restricted)</SelectItem>
+                    {roles.map(r => (
+                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {form.role === "staff" && (
+            {form.roleId !== "role_admin" && form.roleId !== "" && (
               <div className="space-y-3">
                 <Label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5">
-                   <MapPin className="w-3.5 h-3.5" /> Allowed Venues
+                   <MapPin className="w-3.5 h-3.5" /> Allowed Properties
                 </Label>
                 <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-2 scrollbar-thin">
-                  {halls.map(h => {
-                    const selected = form.allowedVenues.includes(h.name);
+                  {properties.map(prop => {
+                    const selected = form.allowedProperties.includes(prop.id);
                     return (
                       <div 
-                        key={h.id} 
-                        onClick={() => toggleVenue(h.name)}
+                        key={prop.id} 
+                        onClick={() => toggleProperty(prop.id)}
                         className={`flex items-center justify-between px-3 py-2.5 rounded-lg border cursor-pointer transition-all ${
                           selected ? "bg-primary/5 border-primary/50 ring-1 ring-primary/20" : "bg-white border-border hover:bg-slate-50"
                         }`}
                       >
-                        <span className={`text-sm font-medium ${selected ? "text-primary" : "text-foreground"}`}>{h.name}</span>
+                        <span className={`text-sm font-medium ${selected ? "text-primary" : "text-foreground"}`}>{prop.name}</span>
                         <div className={`w-4.5 h-4.5 rounded border flex items-center justify-center ${selected ? "bg-primary border-primary" : "bg-white border-muted-foreground/30"}`}>
                            {selected && <X className="w-3 h-3 text-white rotate-45" />}
                         </div>
@@ -169,17 +171,17 @@ export default function UserMaster() {
                     );
                   })}
                 </div>
-                {form.allowedVenues.length === 0 && (
-                   <p className="text-[10px] text-amber-600 font-medium">⚠️ No venues selected. This user won't see any events.</p>
+                {form.allowedProperties.length === 0 && (
+                   <p className="text-[10px] text-amber-600 font-medium">⚠️ No properties selected. This user won't see any events.</p>
                 )}
               </div>
             )}
 
-            {form.role === "admin" && (
+            {form.roleId === "role_admin" && (
               <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5 flex flex-col items-center justify-center text-center space-y-2">
                  <ShieldCheck className="w-10 h-10 text-emerald-600" />
                  <p className="text-sm font-bold text-emerald-800">Administrator Mode</p>
-                 <p className="text-xs text-emerald-700">Administrators have full visibility across all venues and can manage all system settings.</p>
+                 <p className="text-xs text-emerald-700">Administrators automatically have full visibility across all properties and settings.</p>
               </div>
             )}
           </div>
@@ -200,25 +202,29 @@ export default function UserMaster() {
           columns={[
             { 
               label: "User info", 
-              render: (r) => (
-                <div className="flex flex-col">
-                  <span className="font-bold text-foreground">{r.username}</span>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${r.role === 'admin' ? 'text-emerald-600' : 'text-slate-500'}`}>
-                    {r.role}
-                  </span>
-                </div>
-              ) 
+              render: (r) => {
+                const role = roles.find(ro => ro.id === r.roleId);
+                return (
+                  <div className="flex flex-col">
+                    <span className="font-bold text-foreground">{r.username}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${r.roleId === 'role_admin' ? 'text-emerald-600' : 'text-slate-500'}`}>
+                      {role?.name || "Unknown Role"}
+                    </span>
+                  </div>
+                )
+              } 
             },
             { 
-              label: "Venue Access", 
+              label: "Property Access", 
               render: (r) => (
                 <div className="flex flex-wrap gap-1">
-                  {r.allowedVenues.includes("all") ? (
-                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded uppercase">All Venues</span>
-                  ) : r.allowedVenues.length > 0 ? (
-                    r.allowedVenues.map(v => (
-                      <span key={v} className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{v}</span>
-                    ))
+                  {r.allowedProperties.includes("all") ? (
+                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded uppercase">All Properties</span>
+                  ) : r.allowedProperties.length > 0 ? (
+                    r.allowedProperties.map(pid => {
+                       const pName = properties.find(p => p.id === pid)?.name || pid;
+                       return <span key={pid} className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{pName}</span>
+                    })
                   ) : (
                     <span className="text-[10px] italic text-muted-foreground">None</span>
                   )}

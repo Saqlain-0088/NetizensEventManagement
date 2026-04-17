@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Building2, Package, Utensils, Sparkles, ArrowRight, Users, MapPin } from "lucide-react";
+import { Building2, Package, Utensils, Sparkles, ArrowRight, Users, MapPin, ShieldAlert } from "lucide-react";
 import { useBanquetMaster } from "@/context/BanquetMasterContext";
 import { useMasterData } from "@/context/MasterDataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -53,15 +53,23 @@ const cards = [
     border: "border-indigo-200 hover:border-indigo-400",
     path: "/masters/users",
   },
+  {
+    title: "Roles & Permissions",
+    description: "Manage roles and access levels",
+    icon: ShieldAlert,
+    color: "bg-red-100 text-red-600",
+    border: "border-red-200 hover:border-red-400",
+    path: "/masters/roles",
+  },
 ];
 
 export default function MastersHub() {
   const navigate = useNavigate();
   const { properties, halls, packages, extras } = useBanquetMaster();
   const { menuItems } = useMasterData();
-  const { users } = useAuth(); // NEW
+  const { users, roles } = useAuth(); // NEW
 
-  const counts = [properties.length, halls.length, packages.length, menuItems.length, extras.length, users.length]; // added users.length
+  const counts = [properties.length, halls.length, packages.length, menuItems.length, extras.length, users.length, roles.length]; // added roles.length
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">

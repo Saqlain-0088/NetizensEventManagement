@@ -1,9 +1,20 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export interface Role {
+  id: string;
+  name: string;
+  permissions: {
+    canView: boolean;
+    canAdd: boolean;
+    canEdit: boolean;
+    canDelete: boolean;
+  };
+}
+
 export interface AuthUser {
   username: string;
-  role: "admin" | "staff";
-  allowedVenues: string[];
+  roleId: string;
+  allowedProperties: string[];
 }
 
 interface AuthContextType {
@@ -15,18 +26,28 @@ interface AuthContextType {
   addUser: (u: AuthUser & { password: string }) => void;
   updateUser: (username: string, updates: Partial<AuthUser & { password: string }>) => void;
   removeUser: (username: string) => void;
+  roles: Role[];
+  addRole: (r: Role) => void;
+  updateRole: (id: string, updates: Partial<Role>) => void;
+  deleteRole: (id: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const DEFAULT_ROLES: Role[] = [
+  { id: "role_admin", name: "Administrator", permissions: { canView: true, canAdd: true, canEdit: true, canDelete: true } },
+  { id: "role_editor", name: "Editor", permissions: { canView: true, canAdd: true, canEdit: true, canDelete: false } },
+  { id: "role_viewer", name: "Viewer Only", permissions: { canView: true, canAdd: false, canEdit: false, canDelete: false } },
+];
+
 const VALID_USERS: (AuthUser & { password: string })[] = [
-  { username: "admin", password: "admin@123", role: "admin", allowedVenues: ["all"] },
-  { username: "netizens", password: "netizens@2024", role: "admin", allowedVenues: ["all"] },
-  { username: "palace_manager", password: "user@123", role: "staff", allowedVenues: ["THE PALACE"] },
-  { username: "ocean_manager", password: "user@123", role: "staff", allowedVenues: ["OCEAN", "RAJBHAVAN"] },
+  { username: "admin", password: "admin@123", roleId: "role_admin", allowedProperties: ["all"] },
+  { username: "netizens", password: "netizens@2024", roleId: "role_admin", allowedProperties: ["all"] },
+  { username: "manager", password: "user@123", roleId: "role_editor", allowedProperties: ["prop1"] },
 ];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [roles, setRoles] = useState<Role[]>(DEFAULT_ROLES);
   const [users, setUsers] = useState<(AuthUser & { password: string })[]>(VALID_USERS);
   const [user, setUser] = useState<AuthUser | null>(() => {
     const saved = sessionStorage.getItem("auth_user_data");
@@ -71,8 +92,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     sessionStorage.removeItem("auth_user_data");
   };
 
+  const addRole = (r: Role) => setRoles((prev) => [...prev, r]);
+  const updateRole = (id: string, updates: Partial<Role>) => setRoles((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+  const deleteRole = (id: string) => setRoles((prev) => prev.filter((r) => r.id !== id));
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn: !!user, login, logout, user, users, addUser, updateUser, removeUser }}>
+    <AuthContext.Provider value={{ isLoggedIn: !!user, login, logout, user, users, addUser, updateUser, removeUser, roles, addRole, updateRole, deleteRole }}>
       {children}
     </AuthContext.Provider>
   );

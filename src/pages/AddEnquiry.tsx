@@ -200,8 +200,8 @@ const AddEnquiry = () => {
 
   const activeHalls = halls.filter((h) => {
     if (!h.active) return false;
-    if (user?.allowedVenues?.includes("all")) return true;
-    return user?.allowedVenues?.includes(h.name);
+    if (user?.allowedProperties?.includes("all")) return true;
+    return user?.allowedProperties?.includes(h.propertyId);
   });
 
   const activeExtrasFood = extras.filter((e) => e.active && e.type === "food");

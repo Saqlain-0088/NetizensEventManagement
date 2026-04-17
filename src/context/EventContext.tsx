@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { mockEvents, type EventData } from "@/data/mockEvents";
 import { useAuth } from "@/context/AuthContext";
+import { useBanquetMaster } from "@/context/BanquetMasterContext";
 
 interface EventContextType {
   events: EventData[];
@@ -33,12 +34,16 @@ export const useEvents = () => {
   if (!ctx) throw new Error("useEvents must be used within EventProvider");
 
   const { user } = useAuth();
+  const { halls } = useBanquetMaster();
   
-  // Apply RBAC filtering. If user has 'all', they see everything. Otherwise just their venues.
-  // We use `event.hallName` which matches the venue names (e.g. "THE PALACE").
-  const filteredEvents = user?.allowedVenues?.includes("all")
+  // Apply RBAC filtering. If user has 'all', they see everything. Otherwise just their properties.
+  const filteredEvents = user?.allowedProperties?.includes("all")
     ? ctx.events
-    : ctx.events.filter((e) => user?.allowedVenues?.includes(e.hallName));
+    : ctx.events.filter((e) => {
+        const hall = halls.find((h) => h.name === e.hallName);
+        if (!hall) return false;
+        return user?.allowedProperties?.includes(hall.propertyId);
+      });
 
   return { ...ctx, events: filteredEvents };
 };
