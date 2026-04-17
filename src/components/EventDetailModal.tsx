@@ -3,10 +3,12 @@ import { createPortal } from "react-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Download, Share2, Mail, X, Loader2, Edit } from "lucide-react";
+import { Download, Share2, Mail, X, Loader2, Edit, ShieldCheck, Lock, AlertTriangle } from "lucide-react";
 import { EventCard } from "@/components/EventCard";
 import type { EventData } from "@/data/mockEvents";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { useEvents } from "@/context/EventContext";
 import { fmt12 } from "@/lib/utils";
 
 interface EventDetailModalProps {
@@ -21,6 +23,18 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user, roles } = useAuth();
+  const { confirmEvent, cancelEvent } = useEvents();
+
+  // Determine admin status
+  const currentRole = roles.find(r => r.id === user?.roleId);
+  const isAdmin = !!(currentRole?.permissions.canView && currentRole?.permissions.canAdd &&
+    currentRole?.permissions.canEdit && currentRole?.permissions.canDelete);
+
+  // Constants for state check
+  const isDraftOrTentative = event?.status === "draft" || event?.status === "tentative";
+  const isCancelled = event?.status === "cancelled";
+  const isConfirmed = event?.status === "confirmed";
 
   const handleDownload = useCallback(async () => {
     if (!event) return;
@@ -29,7 +43,7 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
     try {
       const { default: html2canvas } = await import("html2canvas");
 
-      // 1. Create a hidden container positioned off-screen (not display:none — html2canvas needs it rendered)
+      // 1. Create a hidden container positioned off-screen
       const container = document.createElement("div");
       container.style.cssText = [
         "position:fixed",
@@ -110,7 +124,33 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
     window.open(`mailto:?subject=${subject}&body=${body}`);
   }, [event]);
 
+  const handleConfirm = useCallback(() => {
+    if (!event) return;
+    const result = confirmEvent(event.id);
+    if (!result.ok) {
+      toast({ title: "Cannot Confirm", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "✅ Confirmed & Locked", description: `"${event.title}" is now confirmed. The slot is booked and the record is locked.` });
+      onClose();
+    }
+  }, [event, confirmEvent, toast, onClose]);
+
+  const handleReject = useCallback(() => {
+    if (!event) return;
+    const result = cancelEvent(event.id);
+    if (!result.ok) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Cancelled", description: `"${event.title}" has been rejected/cancelled.` });
+      onClose();
+    }
+  }, [event, cancelEvent, toast, onClose]);
+
   if (!event) return null;
+
+  const isLocked = event.status === "confirmed" && !event.isEditable;
+  const canEdit = isAdmin || (event.isEditable && event.status !== "confirmed");
+  const canApproveReject = isAdmin && isDraftOrTentative;
 
   // Scale to fit inside ~800px modal width
   const SCALE = 0.70;
@@ -121,10 +161,47 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
         {/* ── Modal header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30 shrink-0">
           <div>
-            <DialogTitle className="text-base font-bold text-foreground">Event Card Preview</DialogTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">{event.title}</p>
+            <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+              Event Card Preview
+              {isLocked && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
+                  <Lock className="w-3 h-3" /> Locked
+                </span>
+              )}
+              {isCancelled && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full uppercase">
+                  <X className="w-3 h-3" /> Cancelled
+                </span>
+              )}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Enquiry by <span className="font-semibold text-foreground">{event.createdBy}</span>
+            </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Admin Actions: Accept / Reject */}
+            {canApproveReject && (
+              <>
+                <Button
+                  size="sm"
+                  onClick={handleConfirm}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm gap-1.5 h-8 text-xs border-0"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Accept
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleReject}
+                  className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200 shadow-sm gap-1.5 h-8 text-xs"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Reject
+                </Button>
+              </>
+            )}
+
             <Button
               size="sm"
               onClick={handleDownload}
@@ -136,22 +213,27 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
                 : <><Download className="w-3.5 h-3.5" /> Download PNG</>
               }
             </Button>
-            <Button
-              size="sm"
-              onClick={() => navigate(`/edit-enquiry/${event.id}`)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm gap-1.5 h-8 text-xs border-0"
-            >
-              <Edit className="w-3.5 h-3.5" />
-              Edit Enquiry
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleWhatsApp} className="h-8 text-xs gap-1.5 border-border">
-              <Share2 className="w-3.5 h-3.5" />
-              WhatsApp
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleEmail} className="h-8 text-xs gap-1.5 border-border">
-              <Mail className="w-3.5 h-3.5" />
-              Email
-            </Button>
+            
+            {canEdit ? (
+              <Button
+                size="sm"
+                onClick={() => navigate(`/edit-enquiry/${event.id}`)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm gap-1.5 h-8 text-xs border-0"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                Modify
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                disabled
+                className="bg-slate-200 text-slate-400 shadow-none gap-1.5 h-8 text-xs border-0 cursor-not-allowed"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                Locked
+              </Button>
+            )}
+            
             <button
               onClick={onClose}
               className="ml-1 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

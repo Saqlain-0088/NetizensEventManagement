@@ -11,6 +11,7 @@ import { DateFilter, type DateRange } from "@/components/DateFilter";
 
 const statusFilters: { label: string; value: EventStatus | "all" }[] = [
   { label: "All", value: "all" },
+  { label: "Draft", value: "draft" },
   { label: "Confirmed", value: "confirmed" },
   { label: "Tentative", value: "tentative" },
   { label: "Cancelled", value: "cancelled" },
@@ -18,6 +19,7 @@ const statusFilters: { label: string; value: EventStatus | "all" }[] = [
 
 const activeStyles: Record<string, string> = {
   all: "bg-primary text-white border-primary shadow-sm",
+  draft: "bg-slate-500 text-white border-slate-500 shadow-sm",
   confirmed: "bg-emerald-600 text-white border-emerald-600 shadow-sm",
   tentative: "bg-amber-500 text-white border-amber-500 shadow-sm",
   cancelled: "bg-red-500 text-white border-red-500 shadow-sm",

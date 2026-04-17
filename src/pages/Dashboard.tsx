@@ -22,6 +22,7 @@ const Dashboard = () => {
   });
 
   const confirmed = filteredEvents.filter((e) => e.status === "confirmed").length;
+  const draft = filteredEvents.filter((e) => e.status === "draft").length;
   const tentative = filteredEvents.filter((e) => e.status === "tentative").length;
   const cancelled = filteredEvents.filter((e) => e.status === "cancelled").length;
   const totalPax = filteredEvents
@@ -59,12 +60,13 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard icon={CalendarDays} label="Total Events" value={filteredEvents.length} iconBg="bg-blue-100" iconColor="text-blue-600" valueColor="text-blue-700" />
+        <StatCard icon={Clock} label="Pending Review" value={draft} iconBg="bg-slate-100" iconColor="text-slate-600" valueColor="text-slate-700" />
         <StatCard icon={CheckCircle2} label="Confirmed" value={confirmed} iconBg="bg-emerald-100" iconColor="text-emerald-600" valueColor="text-emerald-700" />
         <StatCard icon={Clock} label="Tentative" value={tentative} iconBg="bg-amber-100" iconColor="text-amber-600" valueColor="text-amber-700" />
         <StatCard icon={XCircle} label="Cancelled" value={cancelled} iconBg="bg-red-100" iconColor="text-red-600" valueColor="text-red-700" />
-        <StatCard icon={Users} label="Total PAX" value={totalPax} iconBg="bg-blue-100" iconColor="text-blue-600" valueColor="text-blue-700" />
+        <StatCard icon={Users} label="Total PAX" value={totalPax} iconBg="bg-indigo-100" iconColor="text-indigo-600" valueColor="text-indigo-700" />
       </div>
 
       {/* HIDDEN (temporary): Revenue Banner */}

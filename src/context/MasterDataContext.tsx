@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 export interface StaffMember {
   id: string;
@@ -98,10 +98,27 @@ const defaultServiceTemplates: ServiceTemplate[] = [
 ];
 
 export const MasterDataProvider = ({ children }: { children: ReactNode }) => {
-  const [staff, setStaff] = useState<StaffMember[]>(defaultStaff);
-  const [occasions, setOccasions] = useState<OccasionItem[]>(defaultOccasions);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(defaultMenuItems);
-  const [serviceTemplates] = useState<ServiceTemplate[]>(defaultServiceTemplates);
+  const [staff, setStaff] = useState<StaffMember[]>(() => {
+    const saved = localStorage.getItem("master_staff");
+    return saved ? JSON.parse(saved) : defaultStaff;
+  });
+  const [occasions, setOccasions] = useState<OccasionItem[]>(() => {
+    const saved = localStorage.getItem("master_occasions");
+    return saved ? JSON.parse(saved) : defaultOccasions;
+  });
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
+    const saved = localStorage.getItem("master_menuItems");
+    return saved ? JSON.parse(saved) : defaultMenuItems;
+  });
+  const [serviceTemplates, setServiceTemplates] = useState<ServiceTemplate[]>(() => {
+    const saved = localStorage.getItem("master_serviceTemplates");
+    return saved ? JSON.parse(saved) : defaultServiceTemplates;
+  });
+
+  useEffect(() => { localStorage.setItem("master_staff", JSON.stringify(staff)); }, [staff]);
+  useEffect(() => { localStorage.setItem("master_occasions", JSON.stringify(occasions)); }, [occasions]);
+  useEffect(() => { localStorage.setItem("master_menuItems", JSON.stringify(menuItems)); }, [menuItems]);
+  useEffect(() => { localStorage.setItem("master_serviceTemplates", JSON.stringify(serviceTemplates)); }, [serviceTemplates]);
 
   const addStaff = (name: string) => {
     setStaff((prev) => [...prev, { id: Math.random().toString(36).slice(2, 11), name, usageCount: 0 }]);

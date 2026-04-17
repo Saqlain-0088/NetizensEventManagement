@@ -1,4 +1,4 @@
-export type EventStatus = "tentative" | "confirmed" | "cancelled";
+export type EventStatus = "draft" | "tentative" | "confirmed" | "cancelled";
 
 export interface ServiceSlot {
   name: string;
@@ -23,9 +23,40 @@ export interface EventData {
   services: ServiceSlot[];
   menuItems: Record<string, string[]>;
   status: EventStatus;
+  isEditable: boolean;        // false when confirmed (locked)
+  createdBy: string;          // username of creator
   assignedStaff?: string;
   notes?: string;
   rawDescription: string;
+}
+
+/** Returns true if a new booking (hallName, date, startTime, endTime)
+ *  conflicts with any confirmed/booked slot in existingEvents. */
+export function hasSlotConflict(
+  existingEvents: EventData[],
+  hallName: string,
+  date: string,
+  startTime: string,
+  endTime: string,
+  excludeId?: string
+): boolean {
+  const toMins = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const newStart = toMins(startTime);
+  const newEnd   = toMins(endTime);
+
+  return existingEvents.some((e) => {
+    if (excludeId && e.id === excludeId) return false;
+    if (e.hallName !== hallName)        return false;
+    if (e.date !== date)               return false;
+    if (e.status !== "confirmed")      return false; // only confirmed slots are locked
+    const eStart = toMins(e.startTime);
+    const eEnd   = toMins(e.endTime);
+    // Overlap when: newStart < eEnd AND newEnd > eStart
+    return newStart < eEnd && newEnd > eStart;
+  });
 }
 
 export const mockEvents: EventData[] = [
@@ -53,6 +84,8 @@ export const mockEvents: EventData[] = [
       "Brunch": ["Paneer Butter Masala", "Dal Makhani", "Naan", "Rice", "Gulab Jamun"],
     },
     status: "confirmed",
+    isEditable: false,
+    createdBy: "admin",
     assignedStaff: "Priya",
     notes: "VIP client, extra care on presentation",
     rawDescription: "NAME: Rahul Shah\nPAX: 50\nOCCASION: Corporate\nRATE: 600\nMENU: Tea + Lunch\nTIME: 7:00 AM – 10:00 AM\nCONFIRMED",
@@ -84,6 +117,8 @@ export const mockEvents: EventData[] = [
       "Desserts": ["Ice Cream", "Jalebi", "Ras Malai"],
     },
     status: "tentative",
+    isEditable: true,
+    createdBy: "admin",
     assignedStaff: "Amit",
     rawDescription: "NAME: Meera Patel\nPAX: 200\nOCCASION: Wedding\nRATE: 1200\nTIME: 6:00 PM – 11:00 PM",
   },
@@ -109,6 +144,8 @@ export const mockEvents: EventData[] = [
       "Dinner": ["Pasta", "Pizza", "Garlic Bread", "Caesar Salad", "Cake"],
     },
     status: "cancelled",
+    isEditable: true,
+    createdBy: "admin",
     assignedStaff: "Ravi",
     notes: "Cancelled due to venue conflict",
     rawDescription: "NAME: Sneha Kumar\nPAX: 30\nOCCASION: Birthday\nRATE: 800\nTIME: 4:00 PM – 8:00 PM\nCANCELLED",

@@ -7,6 +7,7 @@ interface EventCardProps {
 }
 
 const statusColors: Record<string, { bg: string; text: string; border: string }> = {
+  draft: { bg: "#F1F5F9", text: "#475569", border: "#CBD5E1" },
   confirmed: { bg: "#D1FAE5", text: "#065F46", border: "#6EE7B7" },
   tentative: { bg: "#FEF3C7", text: "#92400E", border: "#FCD34D" },
   cancelled: { bg: "#FEE2E2", text: "#991B1B", border: "#FCA5A5" },
@@ -78,7 +79,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
                 whiteSpace: "nowrap",
                 alignSelf: "center",
               }}>
-                {event.status === "confirmed" ? "Confirmed" : event.status === "cancelled" ? "Cancelled" : "Tentative"}
+                {event.status === "draft" ? "Draft" : event.status === "confirmed" ? "Confirmed" : event.status === "cancelled" ? "Cancelled" : "Tentative"}
               </div>
             </div>
             {event.hallName && (

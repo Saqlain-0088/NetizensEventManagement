@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 // ── Property / Location ──────────────────────────────────────────────────────
 export interface Property {
@@ -176,10 +176,27 @@ const defaultExtras: ExtraService[] = [
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 export const BanquetMasterProvider = ({ children }: { children: ReactNode }) => {
-  const [properties, setProperties] = useState<Property[]>(defaultProperties);
-  const [halls, setHalls] = useState<Hall[]>(defaultHalls);
-  const [packages, setPackages] = useState<Package[]>(defaultPackages);
-  const [extras, setExtras] = useState<ExtraService[]>(defaultExtras);
+  const [properties, setProperties] = useState<Property[]>(() => {
+    const saved = localStorage.getItem("master_properties");
+    return saved ? JSON.parse(saved) : defaultProperties;
+  });
+  const [halls, setHalls] = useState<Hall[]>(() => {
+    const saved = localStorage.getItem("master_halls");
+    return saved ? JSON.parse(saved) : defaultHalls;
+  });
+  const [packages, setPackages] = useState<Package[]>(() => {
+    const saved = localStorage.getItem("master_packages");
+    return saved ? JSON.parse(saved) : defaultPackages;
+  });
+  const [extras, setExtras] = useState<ExtraService[]>(() => {
+    const saved = localStorage.getItem("master_extras");
+    return saved ? JSON.parse(saved) : defaultExtras;
+  });
+
+  useEffect(() => { localStorage.setItem("master_properties", JSON.stringify(properties)); }, [properties]);
+  useEffect(() => { localStorage.setItem("master_halls", JSON.stringify(halls)); }, [halls]);
+  useEffect(() => { localStorage.setItem("master_packages", JSON.stringify(packages)); }, [packages]);
+  useEffect(() => { localStorage.setItem("master_extras", JSON.stringify(extras)); }, [extras]);
 
   // Property
   const addProperty = (p: Omit<Property, "id" | "usageCount">) =>

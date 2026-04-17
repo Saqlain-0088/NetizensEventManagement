@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 export interface Role {
   id: string;
@@ -47,8 +47,17 @@ const VALID_USERS: (AuthUser & { password: string })[] = [
 ];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [roles, setRoles] = useState<Role[]>(DEFAULT_ROLES);
-  const [users, setUsers] = useState<(AuthUser & { password: string })[]>(VALID_USERS);
+  const [roles, setRoles] = useState<Role[]>(() => {
+    const saved = localStorage.getItem("master_roles");
+    return saved ? JSON.parse(saved) : DEFAULT_ROLES;
+  });
+  const [users, setUsers] = useState<(AuthUser & { password: string })[]>(() => {
+    const saved = localStorage.getItem("master_users");
+    return saved ? JSON.parse(saved) : VALID_USERS;
+  });
+
+  useEffect(() => { localStorage.setItem("master_roles", JSON.stringify(roles)); }, [roles]);
+  useEffect(() => { localStorage.setItem("master_users", JSON.stringify(users)); }, [users]);
   const [user, setUser] = useState<AuthUser | null>(() => {
     const saved = sessionStorage.getItem("auth_user_data");
     return saved ? JSON.parse(saved) : null;

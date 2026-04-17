@@ -1,6 +1,10 @@
 import type { EventStatus } from "@/data/mockEvents";
 
 const statusConfig: Record<EventStatus, { label: string; className: string }> = {
+  draft: {
+    label: "Draft",
+    className: "bg-slate-100 text-slate-600 border border-slate-300",
+  },
   confirmed: {
     label: "Confirmed",
     className: "bg-emerald-100 text-emerald-700 border border-emerald-200",

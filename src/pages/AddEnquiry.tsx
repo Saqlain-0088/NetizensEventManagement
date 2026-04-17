@@ -11,6 +11,7 @@ import { useBanquetMaster } from "@/context/BanquetMasterContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { EventStatus } from "@/data/mockEvents";
+import { hasSlotConflict } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
 import ExpenseSummaryPanel from "@/components/enquiry/ExpenseSummaryPanel";
 import ServiceMenuBuilder, { type ServiceEntry, PERSON_CATEGORIES } from "@/components/enquiry/ServiceMenuBuilder";
@@ -34,17 +35,22 @@ const AddEnquiry = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   
-  const { events, addEvent, updateEvent } = useEvents();
+  const { events, addEvent, updateEvent, checkSlotConflict } = useEvents();
   const { occasions, addOccasion, removeOccasion, incrementUsage, menuItems } = useMasterData();
   const { packages, halls, extras, properties } = useBanquetMaster();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const { toast } = useToast();
+
+  // Determine if the current user has full admin permissions
+  const currentRole = roles.find(r => r.id === user?.roleId);
+  const isAdmin = !!(currentRole?.permissions.canView && currentRole?.permissions.canAdd &&
+    currentRole?.permissions.canEdit && currentRole?.permissions.canDelete);
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     title: "", customerName: "", customerPhone: "", customerEmail: "",
     occasion: "", hallName: "", date: "", startTime: "", endTime: "",
-    pax: "", ratePerPerson: "", status: "tentative" as EventStatus, notes: "",
+    pax: "", ratePerPerson: "", status: "draft" as EventStatus, notes: "",
     taxPercent: "18", advanceAmount: "", 
     manualExtraFoodAmount: "", manualExtraEquipmentAmount: "", additionalExpenses: ""
   });
@@ -169,11 +175,24 @@ const AddEnquiry = () => {
   const goPrev = () => { setErrors({}); setStep((s) => Math.max(s - 1, 1)); };
 
   const handleSubmit = () => {
+    // If editing a confirmed record, non-admins are rejected
+    if (isEdit && id) {
+      const existing = events.find((e) => e.id === id);
+      if (existing && existing.status === "confirmed" && !existing.isEditable && !isAdmin) {
+        toast({ title: "Locked", description: "This enquiry is confirmed and cannot be edited.", variant: "destructive" });
+        return;
+      }
+    }
+
     const sel = occasions.find((o) => o.name === form.occasion);
     if (sel) incrementUsage("occasion", sel.id);
     const eventServices = services.filter((s) => s.name.trim()).map((s) => ({ name: s.name, time: s.time }));
     const menuItemsMap: Record<string, string[]> = {};
     services.forEach((s) => { if (s.name && s.menuItems.length > 0) menuItemsMap[s.name] = s.menuItems; });
+
+    // Non-admin users ALWAYS create as draft, regardless of what the form says
+    const resolvedStatus = isAdmin ? form.status : "draft";
+
     const payload = {
       title: form.title, customerName: form.customerName,
       customerPhone: form.customerPhone, customerEmail: form.customerEmail || undefined,
@@ -182,17 +201,28 @@ const AddEnquiry = () => {
       ratePerPerson: Number(form.ratePerPerson), 
       advanceAmount: Number(form.advanceAmount) || undefined, 
       taxPercent: Number(form.taxPercent) || undefined,
-      services: eventServices, menuItems: menuItemsMap, status: form.status,
+      services: eventServices, menuItems: menuItemsMap, status: resolvedStatus as any,
+      isEditable: resolvedStatus !== "confirmed",
+      createdBy: user?.username || "unknown",
       assignedStaff: undefined, notes: form.notes || undefined,
       rawDescription: `NAME: ${form.customerName}\nPAX: ${form.pax}\nOCCASION: ${form.occasion}\nEXTRA FOOD (MANUAL): ${form.manualExtraFoodAmount}\nEXTRA EQ (MANUAL): ${form.manualExtraEquipmentAmount}\nOTHER EXPENSES: ${form.additionalExpenses}`,
     };
 
     if (isEdit && id) {
-      updateEvent(id, payload);
+      const result = updateEvent(id, payload);
+      if (!result.ok) {
+        toast({ title: "Update blocked", description: result.error, variant: "destructive" });
+        return;
+      }
       toast({ title: "Enquiry updated!", description: "The event changes have been saved." });
     } else {
+      // Check slot conflict before adding (only matters if admin is directly confirming)
+      if (resolvedStatus === "confirmed" && checkSlotConflict(form.hallName, form.date, form.startTime, form.endTime)) {
+        toast({ title: "Slot Conflict!", description: "That time slot is already booked for this hall.", variant: "destructive" });
+        return;
+      }
       addEvent({ ...payload, id: Math.random().toString(36).slice(2, 11) });
-      toast({ title: "Enquiry created!", description: "The event has been saved." });
+      toast({ title: "Enquiry created!", description: isAdmin ? "The event has been saved." : "Your enquiry has been saved as a Draft for admin review." });
     }
     
     navigate("/events");
@@ -322,16 +352,23 @@ const AddEnquiry = () => {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-foreground">Status</Label>
-                  <Select value={form.status} onValueChange={(v) => update("status", v)}>
-                    <SelectTrigger className="bg-white border-border h-10 text-foreground">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-border shadow-lg">
-                      <SelectItem value="tentative" className="text-amber-700 focus:bg-amber-50">🟡 Tentative</SelectItem>
-                      <SelectItem value="confirmed" className="text-emerald-700 focus:bg-emerald-50">🟢 Confirmed</SelectItem>
-                      <SelectItem value="cancelled" className="text-red-700 focus:bg-red-50">🔴 Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {isAdmin ? (
+                    <Select value={form.status} onValueChange={(v) => update("status", v)}>
+                      <SelectTrigger className="bg-white border-border h-10 text-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-border shadow-lg">
+                        <SelectItem value="draft" className="text-slate-600 focus:bg-slate-50">📝 Draft</SelectItem>
+                        <SelectItem value="tentative" className="text-amber-700 focus:bg-amber-50">🟡 Tentative</SelectItem>
+                        <SelectItem value="confirmed" className="text-emerald-700 focus:bg-emerald-50">🟢 Confirmed</SelectItem>
+                        <SelectItem value="cancelled" className="text-red-700 focus:bg-red-50">🔴 Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="h-10 flex items-center px-3 rounded-md border border-border bg-slate-50 text-sm text-slate-600 font-medium">
+                      📝 Draft <span className="text-[10px] text-muted-foreground ml-2">(auto-assigned)</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

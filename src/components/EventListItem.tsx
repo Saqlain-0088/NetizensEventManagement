@@ -28,6 +28,11 @@ export const EventListItem = ({ event, onClick }: EventListItemProps) => (
       <div className="flex items-center gap-2.5 flex-wrap">
         <h3 className="text-base font-bold text-foreground truncate">{event.title}</h3>
         <StatusBadge status={event.status} />
+        {event.status === "draft" && (
+          <span className="text-[10px] text-muted-foreground font-medium italic">
+            by {event.createdBy}
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
