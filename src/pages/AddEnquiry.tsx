@@ -193,6 +193,12 @@ const AddEnquiry = () => {
     // Non-admin users ALWAYS create as draft, regardless of what the form says
     const resolvedStatus = isAdmin ? form.status : "draft";
 
+    // GLOBAL SLOT CHECK: Prevent any creation or edit if the slot is strictly taken by a confirmed event
+    if (checkSlotConflict(form.hallName, form.date, form.startTime, form.endTime, isEdit ? id : undefined)) {
+      toast({ title: "Slot Unavailable!", description: "That time slot is already booked and confirmed for this hall.", variant: "destructive" });
+      return;
+    }
+
     const payload = {
       title: form.title, customerName: form.customerName,
       customerPhone: form.customerPhone, customerEmail: form.customerEmail || undefined,
@@ -216,11 +222,6 @@ const AddEnquiry = () => {
       }
       toast({ title: "Enquiry updated!", description: "The event changes have been saved." });
     } else {
-      // Check slot conflict before adding (only matters if admin is directly confirming)
-      if (resolvedStatus === "confirmed" && checkSlotConflict(form.hallName, form.date, form.startTime, form.endTime)) {
-        toast({ title: "Slot Conflict!", description: "That time slot is already booked for this hall.", variant: "destructive" });
-        return;
-      }
       addEvent({ ...payload, id: Math.random().toString(36).slice(2, 11) });
       toast({ title: "Enquiry created!", description: isAdmin ? "The event has been saved." : "Your enquiry has been saved as a Draft for admin review." });
     }
