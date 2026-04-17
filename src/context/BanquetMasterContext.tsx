@@ -1,8 +1,18 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+// ── Property / Location ──────────────────────────────────────────────────────
+export interface Property {
+  id: string;
+  name: string;
+  location: string;
+  active: boolean;
+  usageCount: number;
+}
+
 // ── Hall / Venue ──────────────────────────────────────────────────────────────
 export interface Hall {
   id: string;
+  propertyId: string;
   name: string;
   capacityMin: number;
   capacityMax: number;
@@ -42,9 +52,16 @@ export interface ExtraService {
 
 // ── Context type ──────────────────────────────────────────────────────────────
 interface BanquetMasterContextType {
+  properties: Property[];
   halls: Hall[];
   packages: Package[];
   extras: ExtraService[];
+
+  // Property CRUD
+  addProperty: (p: Omit<Property, "id" | "usageCount">) => void;
+  updateProperty: (id: string, p: Partial<Property>) => void;
+  deleteProperty: (id: string) => void;
+  toggleProperty: (id: string, field: "active") => void;
 
   // Hall CRUD
   addHall: (h: Omit<Hall, "id" | "usageCount">) => void;
@@ -72,10 +89,15 @@ interface BanquetMasterContextType {
 const BanquetMasterContext = createContext<BanquetMasterContextType | undefined>(undefined);
 
 // ── Seed data (exact from Banquetoria PDF) ────────────────────────────────────
+const defaultProperties: Property[] = [
+  { id: "prop1", name: "Adajan", location: "Surat", active: true, usageCount: 2 },
+  { id: "prop2", name: "Vesu", location: "Surat", active: true, usageCount: 1 },
+];
+
 const defaultHalls: Hall[] = [
-  { id: "h1", name: "THE PALACE", capacityMin: 80,  capacityMax: 220, size: "41x50 ft", baseRent: 5000, active: true, featured: true,  usageCount: 18 },
-  { id: "h2", name: "RAJBHAVAN",  capacityMin: 60,  capacityMax: 120, size: "30x50 ft", baseRent: 5000, active: true, featured: false, usageCount: 12 },
-  { id: "h3", name: "OCEAN",      capacityMin: 80,  capacityMax: 220, size: "41x50 ft", baseRent: 5000, active: true, featured: false, usageCount: 9  },
+  { id: "h1", propertyId: "prop1", name: "THE PALACE", capacityMin: 80,  capacityMax: 220, size: "41x50 ft", baseRent: 5000, active: true, featured: true,  usageCount: 18 },
+  { id: "h2", propertyId: "prop1", name: "RAJBHAVAN",  capacityMin: 60,  capacityMax: 120, size: "30x50 ft", baseRent: 5000, active: true, featured: false, usageCount: 12 },
+  { id: "h3", propertyId: "prop2", name: "OCEAN",      capacityMin: 80,  capacityMax: 220, size: "41x50 ft", baseRent: 5000, active: true, featured: false, usageCount: 9  },
   // Note: Hall Rental after 04 Hours = ₹5000/hr | Selection Menu = ₹50 extra
 ];
 
@@ -154,9 +176,19 @@ const defaultExtras: ExtraService[] = [
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 export const BanquetMasterProvider = ({ children }: { children: ReactNode }) => {
+  const [properties, setProperties] = useState<Property[]>(defaultProperties);
   const [halls, setHalls] = useState<Hall[]>(defaultHalls);
   const [packages, setPackages] = useState<Package[]>(defaultPackages);
   const [extras, setExtras] = useState<ExtraService[]>(defaultExtras);
+
+  // Property
+  const addProperty = (p: Omit<Property, "id" | "usageCount">) =>
+    setProperties((prev) => [...prev, { ...p, id: Math.random().toString(36).slice(2, 11), usageCount: 0 }]);
+  const updateProperty = (id: string, p: Partial<Property>) =>
+    setProperties((prev) => prev.map((x) => (x.id === id ? { ...x, ...p } : x)));
+  const deleteProperty = (id: string) => setProperties((prev) => prev.filter((x) => x.id !== id));
+  const toggleProperty = (id: string, field: "active") =>
+    setProperties((prev) => prev.map((x) => (x.id === id ? { ...x, [field]: !x[field] } : x)));
 
   // Hall
   const addHall = (h: Omit<Hall, "id" | "usageCount">) =>
@@ -210,7 +242,8 @@ export const BanquetMasterProvider = ({ children }: { children: ReactNode }) => 
 
   return (
     <BanquetMasterContext.Provider value={{
-      halls, packages, extras,
+      properties, halls, packages, extras,
+      addProperty, updateProperty, deleteProperty, toggleProperty,
       addHall, updateHall, deleteHall, toggleHall,
       addPackage, updatePackage, deletePackage, togglePackage,
       addExtra, updateExtra, deleteExtra, toggleExtra,

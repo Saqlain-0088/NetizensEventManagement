@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { useEvents } from "@/context/EventContext";
 import { useMasterData } from "@/context/MasterDataContext";
 import { useBanquetMaster } from "@/context/BanquetMasterContext";
@@ -36,7 +36,7 @@ const AddEnquiry = () => {
   
   const { events, addEvent, updateEvent } = useEvents();
   const { occasions, addOccasion, removeOccasion, incrementUsage, menuItems } = useMasterData();
-  const { packages, halls, extras } = useBanquetMaster();
+  const { packages, halls, extras, properties } = useBanquetMaster();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -286,7 +286,24 @@ const AddEnquiry = () => {
                       <SelectValue placeholder="Select hall..." />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-border shadow-lg">
-                      {activeHalls.map((h) => (
+                      {properties.filter((p) => p.active).map((p) => {
+                        const pHalls = activeHalls.filter((h) => h.propertyId === p.id);
+                        if (pHalls.length === 0) return null;
+                        return (
+                          <SelectGroup key={p.id}>
+                            <SelectLabel className="bg-muted/50 text-muted-foreground text-xs">{p.name}</SelectLabel>
+                            {pHalls.map((h) => (
+                              <SelectItem key={h.id} value={h.name}>
+                                {h.name}{" "}
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  {h.capacityMin}–{h.capacityMax} pax
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        );
+                      })}
+                      {activeHalls.filter(h => !properties.find(p => p.id === h.propertyId)).map((h) => (
                         <SelectItem key={h.id} value={h.name}>
                           {h.name}{" "}
                           <span className="text-xs text-muted-foreground ml-1">

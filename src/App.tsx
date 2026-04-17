@@ -16,6 +16,7 @@ import Events from "./pages/Events";
 import AddEnquiry from "./pages/AddEnquiry";
 import NotFound from "./pages/NotFound";
 import MastersHub from "./pages/masters/MastersHub";
+import PropertyMaster from "./pages/masters/PropertyMaster";
 import HallMaster from "./pages/masters/HallMaster";
 import PackageMaster from "./pages/masters/PackageMaster";
 import MenuMaster from "./pages/masters/MenuMaster";
@@ -57,6 +58,7 @@ const App = () => (
                   <Route path="/add-enquiry" element={<Protected><AddEnquiry /></Protected>} />
                   <Route path="/edit-enquiry/:id" element={<Protected><AddEnquiry /></Protected>} />
                   <Route path="/masters" element={<AdminProtected><MastersHub /></AdminProtected>} />
+                  <Route path="/masters/properties" element={<AdminProtected><PropertyMaster /></AdminProtected>} />
                   <Route path="/masters/halls" element={<AdminProtected><HallMaster /></AdminProtected>} />
                   <Route path="/masters/packages" element={<AdminProtected><PackageMaster /></AdminProtected>} />
                   <Route path="/masters/menu" element={<AdminProtected><MenuMaster /></AdminProtected>} />

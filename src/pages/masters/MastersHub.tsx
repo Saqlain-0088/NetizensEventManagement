@@ -1,10 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import { Building2, Package, Utensils, Sparkles, ArrowRight, Users } from "lucide-react";
+import { Building2, Package, Utensils, Sparkles, ArrowRight, Users, MapPin } from "lucide-react";
 import { useBanquetMaster } from "@/context/BanquetMasterContext";
 import { useMasterData } from "@/context/MasterDataContext";
 import { useAuth } from "@/context/AuthContext";
 
 const cards = [
+  {
+    title: "Property / Location",
+    description: "Manage properties and their locations",
+    icon: MapPin,
+    color: "bg-purple-100 text-purple-600",
+    border: "border-purple-200 hover:border-purple-400",
+    path: "/masters/properties",
+  },
   {
     title: "Hall / Venue",
     description: "Manage banquet halls, capacity, and pricing",
@@ -49,11 +57,11 @@ const cards = [
 
 export default function MastersHub() {
   const navigate = useNavigate();
-  const { halls, packages, extras } = useBanquetMaster();
+  const { properties, halls, packages, extras } = useBanquetMaster();
   const { menuItems } = useMasterData();
   const { users } = useAuth(); // NEW
 
-  const counts = [halls.length, packages.length, menuItems.length, extras.length, users.length]; // added users.length
+  const counts = [properties.length, halls.length, packages.length, menuItems.length, extras.length, users.length]; // added users.length
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">

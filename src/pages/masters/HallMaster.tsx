@@ -8,11 +8,11 @@ import { Building2, Plus, X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const empty = (): Omit<Hall, "id" | "usageCount"> => ({
-  name: "", capacityMin: 0, capacityMax: 0, size: "", baseRent: 0, active: true, featured: false,
+  propertyId: "", name: "", capacityMin: 0, capacityMax: 0, size: "", baseRent: 0, active: true, featured: false,
 });
 
 export default function HallMaster() {
-  const { halls, addHall, updateHall, deleteHall, toggleHall } = useBanquetMaster();
+  const { properties, halls, addHall, updateHall, deleteHall, toggleHall } = useBanquetMaster();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -22,10 +22,11 @@ export default function HallMaster() {
   const filtered = halls.filter((h) => h.name.toLowerCase().includes(search.toLowerCase()));
 
   const openAdd = () => { setEditing(null); setForm(empty()); setShowForm(true); };
-  const openEdit = (h: Hall) => { setEditing(h); setForm({ name: h.name, capacityMin: h.capacityMin, capacityMax: h.capacityMax, size: h.size, baseRent: h.baseRent, active: h.active, featured: h.featured }); setShowForm(true); };
+  const openEdit = (h: Hall) => { setEditing(h); setForm({ propertyId: h.propertyId, name: h.name, capacityMin: h.capacityMin, capacityMax: h.capacityMax, size: h.size, baseRent: h.baseRent, active: h.active, featured: h.featured }); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditing(null); };
 
   const handleSave = () => {
+    if (!form.propertyId) { toast({ title: "Property is required", variant: "destructive" }); return; }
     if (!form.name.trim()) { toast({ title: "Hall name is required", variant: "destructive" }); return; }
     if (editing) {
       updateHall(editing.id, form);
@@ -76,9 +77,20 @@ export default function HallMaster() {
             <button onClick={closeForm} className="p-1 rounded-lg hover:bg-muted text-muted-foreground"><X className="w-4 h-4" /></button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 space-y-1.5">
-              <Label className="text-xs font-medium">Hall Name *</Label>
-              <Input value={form.name} onChange={(e) => f("name", e.target.value)} placeholder="e.g. THE PALACE" className="bg-white border-border h-9" />
+            <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Property *</Label>
+                <select value={form.propertyId} onChange={(e) => f("propertyId", e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
+                  <option value="">Select Property</option>
+                  {properties.filter(p => p.active).map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Hall Name *</Label>
+                <Input value={form.name} onChange={(e) => f("name", e.target.value)} placeholder="e.g. THE PALACE" className="bg-white border-border h-9" />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Size</Label>
@@ -118,7 +130,12 @@ export default function HallMaster() {
       <MasterTable
         rows={filtered}
         columns={[
-          { label: "Hall Name", render: (r) => <span className="font-semibold">{r.name}</span> },
+          { label: "Hall Name", render: (r) => (
+            <div>
+              <span className="font-semibold block">{r.name}</span>
+              <span className="text-xs text-muted-foreground">{properties.find(p => p.id === r.propertyId)?.name || 'Unknown Property'}</span>
+            </div>
+          ) },
           { label: "Capacity", render: (r) => <span className="text-muted-foreground">{r.capacityMin}–{r.capacityMax} pax</span> },
           { label: "Size", render: (r) => <span className="text-muted-foreground">{r.size || "—"}</span> },
           { label: "Base Rent", render: (r) => <span>{r.baseRent > 0 ? `₹${r.baseRent.toLocaleString("en-IN")}` : "Included"}</span> },
