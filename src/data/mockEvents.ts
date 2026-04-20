@@ -41,20 +41,29 @@ export function hasSlotConflict(
   endTime: string,
   excludeId?: string
 ): boolean {
-  const toMins = (t: string) => {
+  const toMins = (t: string | undefined | null) => {
+    if (!t || typeof t !== "string" || !t.includes(":")) return 0;
     const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
+    return (h || 0) * 60 + (m || 0);
   };
   const newStart = toMins(startTime);
   const newEnd   = toMins(endTime);
+
+  // If new times are invalid, no conflict possible here
+  if (newStart === 0 && newEnd === 0) return false;
 
   return existingEvents.some((e) => {
     if (excludeId && e.id === excludeId) return false;
     if (e.hallName !== hallName)       return false;
     if (e.date !== date)               return false;
-    if (e.status === "cancelled")      return false; // active slots (draft, tentative, confirmed) are locked
+    if (e.status === "cancelled")      return false; 
+    
     const eStart = toMins(e.startTime);
     const eEnd   = toMins(e.endTime);
+    
+    // If existing event doesn't have valid times set yet (e.g. fresh draft), skip it
+    if (eStart === 0 && eEnd === 0) return false;
+
     // Overlap when: newStart < eEnd AND newEnd > eStart
     return newStart < eEnd && newEnd > eStart;
   });

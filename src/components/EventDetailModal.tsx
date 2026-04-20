@@ -124,13 +124,14 @@ export const EventDetailModal = ({ event, open, onClose }: EventDetailModalProps
     window.open(`mailto:?subject=${subject}&body=${body}`);
   }, [event]);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     if (!event) return;
-    const result = confirmEvent(event.id);
+    const result = await confirmEvent(event.id);
     if (!result.ok) {
       toast({ title: "Cannot Confirm", description: result.error, variant: "destructive" });
     } else {
-      toast({ title: "✅ Confirmed & Locked", description: `"${event.title}" is now confirmed. The slot is booked and the record is locked.` });
+      // EventContext handles the success toast for Google Calendar sync
+      // But we still close the modal
       onClose();
     }
   }, [event, confirmEvent, toast, onClose]);

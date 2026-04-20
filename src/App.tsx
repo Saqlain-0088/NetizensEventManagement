@@ -9,6 +9,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { EventProvider } from "@/context/EventContext";
 import { MasterDataProvider } from "@/context/MasterDataContext";
 import { BanquetMasterProvider } from "@/context/BanquetMasterContext";
+import { GoogleAuthProvider } from "@/context/GoogleAuthContext";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useAuth } from "@/context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -42,41 +44,45 @@ const AdminProtected = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <MasterDataProvider>
-            <BanquetMasterProvider>
-              <EventProvider>
-                <Routes>
-                  {/* Public */}
-                  <Route path="/login" element={<Login />} />
+  <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <GoogleAuthProvider>
+              <MasterDataProvider>
+                <BanquetMasterProvider>
+                  <EventProvider>
+                    <Routes>
+                      {/* Public */}
+                      <Route path="/login" element={<Login />} />
 
-                  {/* Redirect root to login if not handled */}
-                  <Route path="/" element={<Protected><Dashboard /></Protected>} />
-                  <Route path="/events" element={<Protected><Events /></Protected>} />
-                  <Route path="/add-enquiry" element={<Protected><AddEnquiry /></Protected>} />
-                  <Route path="/edit-enquiry/:id" element={<Protected><AddEnquiry /></Protected>} />
-                  <Route path="/masters" element={<AdminProtected><MastersHub /></AdminProtected>} />
-                  <Route path="/masters/properties" element={<AdminProtected><PropertyMaster /></AdminProtected>} />
-                  <Route path="/masters/roles" element={<AdminProtected><RoleMaster /></AdminProtected>} />
-                  <Route path="/masters/halls" element={<AdminProtected><HallMaster /></AdminProtected>} />
-                  <Route path="/masters/packages" element={<AdminProtected><PackageMaster /></AdminProtected>} />
-                  <Route path="/masters/menu" element={<AdminProtected><MenuMaster /></AdminProtected>} />
-                  <Route path="/masters/extras" element={<AdminProtected><ExtrasMaster /></AdminProtected>} />
-                  <Route path="/masters/users" element={<AdminProtected><UserMaster /></AdminProtected>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </EventProvider>
-            </BanquetMasterProvider>
-          </MasterDataProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+                      {/* Redirect root to login if not handled */}
+                      <Route path="/" element={<Protected><Dashboard /></Protected>} />
+                      <Route path="/events" element={<Protected><Events /></Protected>} />
+                      <Route path="/add-enquiry" element={<Protected><AddEnquiry /></Protected>} />
+                      <Route path="/edit-enquiry/:id" element={<Protected><AddEnquiry /></Protected>} />
+                      <Route path="/masters" element={<AdminProtected><MastersHub /></AdminProtected>} />
+                      <Route path="/masters/properties" element={<AdminProtected><PropertyMaster /></AdminProtected>} />
+                      <Route path="/masters/roles" element={<AdminProtected><RoleMaster /></AdminProtected>} />
+                      <Route path="/masters/halls" element={<AdminProtected><HallMaster /></AdminProtected>} />
+                      <Route path="/masters/packages" element={<AdminProtected><PackageMaster /></AdminProtected>} />
+                      <Route path="/masters/menu" element={<AdminProtected><MenuMaster /></AdminProtected>} />
+                      <Route path="/masters/extras" element={<AdminProtected><ExtrasMaster /></AdminProtected>} />
+                      <Route path="/masters/users" element={<AdminProtected><UserMaster /></AdminProtected>} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </EventProvider>
+                </BanquetMasterProvider>
+              </MasterDataProvider>
+            </GoogleAuthProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </GoogleOAuthProvider>
 );
 
 export default App;

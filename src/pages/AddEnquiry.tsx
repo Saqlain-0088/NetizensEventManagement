@@ -43,8 +43,8 @@ const AddEnquiry = () => {
 
   // Determine if the current user has full admin permissions
   const currentRole = roles.find(r => r.id === user?.roleId);
-  const isAdmin = !!(currentRole?.permissions.canView && currentRole?.permissions.canAdd &&
-    currentRole?.permissions.canEdit && currentRole?.permissions.canDelete);
+  const isAdmin = !!(currentRole?.permissions?.canView && currentRole?.permissions?.canAdd &&
+    currentRole?.permissions?.canEdit && currentRole?.permissions?.canDelete);
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -96,7 +96,7 @@ const AddEnquiry = () => {
             name: s.name,
             time: s.time,
             menuItems: existing.menuItems?.[s.name] || [],
-            personCategories: PERSON_CATEGORIES.map((c) => ({ category: c, count: "" })),
+            personCategories: s.personCategories || PERSON_CATEGORIES.map((c) => ({ category: c, count: "" })),
           }));
           setServices(srvs);
         }
@@ -175,7 +175,7 @@ const AddEnquiry = () => {
   const goNext = () => { if (validateStep(step)) setStep((s) => Math.min(s + 1, STEPS.length)); };
   const goPrev = () => { setErrors({}); setStep((s) => Math.max(s - 1, 1)); };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // If editing a confirmed record, non-admins are rejected
     if (isEdit && id) {
       const existing = events.find((e) => e.id === id);
@@ -205,8 +205,8 @@ const AddEnquiry = () => {
       customerPhone: form.customerPhone, customerEmail: form.customerEmail || undefined,
       occasion: form.occasion, hallName: form.hallName, date: form.date,
       startTime: form.startTime, endTime: form.endTime, pax: Number(form.pax),
-      ratePerPerson: Number(form.ratePerPerson), 
-      advanceAmount: Number(form.advanceAmount) || undefined, 
+      ratePerPerson: Number(form.ratePerPerson),
+      advanceAmount: Number(form.advanceAmount) || undefined,
       taxPercent: Number(form.taxPercent) || undefined,
       services: eventServices, menuItems: menuItemsMap, status: resolvedStatus as any,
       isEditable: resolvedStatus !== "confirmed",
@@ -217,17 +217,17 @@ const AddEnquiry = () => {
     };
 
     if (isEdit && id) {
-      const result = updateEvent(id, payload);
+      const result = await updateEvent(id, payload);
       if (!result.ok) {
         toast({ title: "Update blocked", description: result.error, variant: "destructive" });
         return;
       }
       toast({ title: "Enquiry updated!", description: "The event changes have been saved." });
     } else {
-      addEvent({ ...payload, id: Math.random().toString(36).slice(2, 11) });
+      await addEvent({ ...payload, id: Math.random().toString(36).slice(2, 11) });
       toast({ title: "Enquiry created!", description: isAdmin ? "The event has been saved." : "Your enquiry has been saved as a Draft for admin review." });
     }
-    
+
     navigate("/events");
   };
 

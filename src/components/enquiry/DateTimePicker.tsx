@@ -24,6 +24,7 @@ import { fmt12 } from "@/lib/utils";
 function formatDateHeading(ds: string) {
   if (!ds) return "";
   const d = new Date(ds + "T00:00:00");
+  if (isNaN(d.getTime())) return ds; // Return raw string if invalid
   return d.toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" });
 }
 
@@ -35,6 +36,7 @@ export const CalendlyScheduler = ({
   startTime, onStartTimeChange,
   endTime, onEndTimeChange,
   errors,
+  isSlotBooked,
 }: {
   date: string; onDateChange: (v: string) => void;
   startTime: string; onStartTimeChange: (v: string) => void;
@@ -43,11 +45,22 @@ export const CalendlyScheduler = ({
   isSlotBooked?: (startTime: string, endTime: string) => boolean;
 }) => {
   const [cal, setCal] = useState(() => {
-    const d = date ? new Date(date + "T00:00:00") : new Date();
+    let d = date ? new Date(date + "T00:00:00") : new Date();
+    if (isNaN(d.getTime())) d = new Date(); // Fallback if record date is invalid
     return { year: d.getFullYear(), month: d.getMonth() };
   });
+  // Sync calendar with date prop (important for edit mode)
+  useEffect(() => {
+    if (date) {
+      const d = new Date(date + "T00:00:00");
+      if (!isNaN(d.getTime())) {
+        setCal({ year: d.getFullYear(), month: d.getMonth() });
+      }
+    }
+  }, [date]);
+
   // "start" or "end" – which time list to show
-  const [phase, setPhase] = useState<"start" | "end">(startTime ? "end" : "start");
+  const [phase, setPhase] = useState<"start" | "end">(startTime && !endTime ? "end" : "start");
   const slotListRef = useRef<HTMLDivElement>(null);
 
   // Reset phase when start time changes
@@ -282,7 +295,7 @@ export const CalendlyScheduler = ({
         {(startTime || endTime) && (
           <div className="px-5 py-3 border-t border-gray-200 bg-gray-50/50 flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-sm">
-              {date && (
+              {date && !isNaN(new Date(date + "T00:00:00").getTime()) && (
                 <span className="font-medium text-gray-700">
                   {new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                 </span>
@@ -400,7 +413,7 @@ export const AllPackages = ({
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">Add from master menu:</p>
                 {(["snacks", "beverages", "breakfast", "lunch", "dinner", "desserts"] as const).map((cat) => {
-                  const catItems = menuItems.filter(
+                  const catItems = (menuItems || []).filter(
                     (m) => m.category === cat && !services[0].menuItems.includes(m.name)
                   );
                   if (!catItems.length) return null;
