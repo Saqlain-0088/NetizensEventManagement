@@ -5,6 +5,11 @@ export interface ServiceSlot {
   time: string;
 }
 
+export interface ExtraSelection {
+  name: string;
+  quantity: number;
+}
+
 export interface EventData {
   id: string;
   title: string;
@@ -27,7 +32,7 @@ export interface EventData {
   createdBy: string;          // username of creator
   assignedStaff?: string;
   notes?: string;
-  selectedExtras?: string[];  // optional for backward compat, treated as []
+  selectedExtras?: (string | ExtraSelection)[];
   rawDescription: string;
 }
 
@@ -72,95 +77,40 @@ export function hasSlotConflict(
 export const mockEvents: EventData[] = [
   {
     id: "1",
-    title: "Shah Corporate Lunch",
+    title: "Wedding Reception - Shah Family",
     customerName: "Rahul Shah",
     customerPhone: "+91 98765 43210",
-    customerEmail: "rahul@company.com",
-    occasion: "Corporate",
+    occasion: "Wedding",
     hallName: "Grand Ballroom",
-    date: "2026-04-10",
-    startTime: "07:00 AM",
-    endTime: "10:00 AM",
-    pax: 50,
-    ratePerPerson: 600,
-    advanceAmount: 10000,
-    taxPercent: 18,
-    services: [
-      { name: "High Tea", time: "07:15 AM" },
-      { name: "Brunch", time: "09:30 AM" },
-    ],
-    menuItems: {
-      "High Tea": ["Tea", "Coffee", "Samosa", "Sandwich", "Cookies"],
-      "Brunch": ["Paneer Butter Masala", "Dal Makhani", "Naan", "Rice", "Gulab Jamun"],
-    },
+    date: "2026-05-15",
+    startTime: "18:00",
+    endTime: "23:00",
+    pax: 250,
+    ratePerPerson: 850,
     status: "confirmed",
     isEditable: false,
     createdBy: "admin",
-    assignedStaff: "Priya",
-    selectedExtras: [],
-    notes: "VIP client, extra care on presentation",
-    rawDescription: "NAME: Rahul Shah\nPAX: 50\nOCCASION: Corporate\nRATE: 600\nMENU: Tea + Lunch\nTIME: 7:00 AM – 10:00 AM\nCONFIRMED",
+    rawDescription: "A grand wedding reception for the Shah family with full catering.",
+    services: [],
+    menuItems: {}
   },
   {
     id: "2",
-    title: "Patel Wedding Reception",
-    customerName: "Meera Patel",
-    customerPhone: "+91 99887 65432",
-    occasion: "Wedding",
-    hallName: "Crystal Hall",
-    date: "2026-04-12",
-    startTime: "06:00 PM",
-    endTime: "11:00 PM",
-    pax: 200,
+    title: "Corporate Annual Meet",
+    customerName: "Amit Mehra",
+    customerPhone: "+91 98222 11111",
+    occasion: "Corporate",
+    hallName: "Conference Hall A",
+    date: "2026-04-25",
+    startTime: "09:00",
+    endTime: "17:00",
+    pax: 100,
     ratePerPerson: 1200,
-    advanceAmount: 50000,
-    taxPercent: 18,
-    services: [
-      { name: "Welcome Drinks", time: "06:00 PM" },
-      { name: "Starters", time: "07:00 PM" },
-      { name: "Main Course", time: "08:30 PM" },
-      { name: "Desserts", time: "10:00 PM" },
-    ],
-    menuItems: {
-      "Welcome Drinks": ["Mocktails", "Fresh Juice", "Chaas"],
-      "Starters": ["Paneer Tikka", "Veg Kebab", "Spring Rolls", "Pav Bhaji"],
-      "Main Course": ["Biryani", "Chole", "Palak Paneer", "Rotis", "Raita"],
-      "Desserts": ["Ice Cream", "Jalebi", "Ras Malai"],
-    },
     status: "tentative",
     isEditable: true,
-    createdBy: "admin",
-    assignedStaff: "Amit",
-    selectedExtras: [],
-    rawDescription: "NAME: Meera Patel\nPAX: 200\nOCCASION: Wedding\nRATE: 1200\nTIME: 6:00 PM – 11:00 PM",
-  },
-  {
-    id: "3",
-    title: "Kumar Birthday Party",
-    customerName: "Sneha Kumar",
-    customerPhone: "+91 87654 32100",
-    occasion: "Birthday",
-    hallName: "Terrace Garden",
-    date: "2026-04-08",
-    startTime: "04:00 PM",
-    endTime: "08:00 PM",
-    pax: 30,
-    ratePerPerson: 800,
-    taxPercent: 18,
-    services: [
-      { name: "Snacks", time: "04:30 PM" },
-      { name: "Dinner", time: "06:30 PM" },
-    ],
-    menuItems: {
-      "Snacks": ["French Fries", "Nachos", "Bruschetta", "Mini Burgers"],
-      "Dinner": ["Pasta", "Pizza", "Garlic Bread", "Caesar Salad", "Cake"],
-    },
-    status: "cancelled",
-    isEditable: true,
-    createdBy: "admin",
-    assignedStaff: "Ravi",
-    selectedExtras: [],
-    notes: "Cancelled due to venue conflict",
-    rawDescription: "NAME: Sneha Kumar\nPAX: 30\nOCCASION: Birthday\nRATE: 800\nTIME: 4:00 PM – 8:00 PM\nCANCELLED",
-  },
+    createdBy: "staff_priya",
+    rawDescription: "Annual strategy meet for Tech Solutions Ltd.",
+    services: [],
+    menuItems: {}
+  }
 ];

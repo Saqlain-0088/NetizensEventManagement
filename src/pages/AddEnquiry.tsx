@@ -10,7 +10,7 @@ import { useMasterData } from "@/context/MasterDataContext";
 import { useBanquetMaster } from "@/context/BanquetMasterContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import type { EventStatus } from "@/data/mockEvents";
+import type { EventStatus, ExtraSelection } from "@/data/mockEvents";
 import { hasSlotConflict } from "@/data/mockEvents";
 import SmartDropdown from "@/components/enquiry/SmartDropdown";
 import ExpenseSummaryPanel from "@/components/enquiry/ExpenseSummaryPanel";
@@ -56,7 +56,7 @@ const AddEnquiry = () => {
   });
   const [services, setServices] = useState<ServiceEntry[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [selectedExtras, setSelectedExtras] = useState<(string | ExtraSelection)[]>([]);
   const [selectedPkgId, setSelectedPkgId] = useState<string | null>(null);
 
   const update = (field: string, value: string) => {
@@ -144,9 +144,35 @@ const AddEnquiry = () => {
     toast({ title: `Package applied: ${p.name}` });
   };
 
-  const toggleExtra = (name: string) =>
-    setSelectedExtras((p) => p.includes(name) ? p.filter((x) => x !== name) : [...p, name]);
-  const extrasTotal = extras.filter((e) => selectedExtras.includes(e.name)).reduce((s, e) => s + e.price, 0);
+  const toggleExtra = (name: string) => {
+    setSelectedExtras((prev) => {
+      const exists = prev.find((x) => (typeof x === "string" ? x === name : x.name === name));
+      if (exists) {
+        return prev.filter((x) => (typeof x === "string" ? x !== name : x.name !== name));
+      } else {
+        return [...prev, { name, quantity: 1 }];
+      }
+    });
+  };
+
+  const updateExtraQuantity = (name: string, quantity: number) => {
+    setSelectedExtras((prev) =>
+      prev.map((x) => {
+        const xName = typeof x === "string" ? x : x.name;
+        if (xName === name) {
+          return { name: xName, quantity: Math.max(1, quantity) };
+        }
+        return x;
+      })
+    );
+  };
+
+  const extrasTotal = extras.reduce((sum, ex) => {
+    const selection = selectedExtras.find((s) => (typeof s === "string" ? s === ex.name : s.name === ex.name));
+    if (!selection) return sum;
+    const qty = typeof selection === "string" ? 1 : selection.quantity;
+    return sum + (ex.price * qty);
+  }, 0);
 
   // ── Validation ────────────────────────────────────────────────────────────
   const validateStep = (s: number) => {
@@ -459,20 +485,44 @@ const AddEnquiry = () => {
                   </div>
 
                   {activeExtrasFood.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Food</Label>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {activeExtrasFood.map((ex) => {
-                          const sel = selectedExtras.includes(ex.name);
+                          const selection = selectedExtras.find(s => (typeof s === "string" ? s === ex.name : s.name === ex.name));
+                          const sel = !!selection;
+                          const qty = typeof selection === "string" ? 1 : selection?.quantity || 1;
+                          
                           return (
-                            <button key={ex.id} type="button" onClick={() => toggleExtra(ex.name)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                                sel ? "bg-primary text-white border-primary" : "bg-white text-foreground border-border hover:border-primary/40"
-                              }`}>
-                              {ex.name}
-                              <span className={sel ? "text-white/70" : "text-muted-foreground"}>₹{ex.price}</span>
-                              {sel && <X className="h-3 w-3" />}
-                            </button>
+                            <div key={ex.id} className={`flex flex-col gap-2 p-2 rounded-xl border transition-all ${
+                              sel ? "bg-primary/5 border-primary shadow-sm" : "bg-white border-border hover:border-primary/40"
+                            }`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <button type="button" onClick={() => toggleExtra(ex.name)}
+                                  className={`flex-1 text-left text-xs font-semibold ${sel ? "text-primary" : "text-foreground"}`}>
+                                  {ex.name}
+                                  <p className="text-[10px] text-muted-foreground font-normal">₹{ex.price} each</p>
+                                </button>
+                                {sel && (
+                                  <button type="button" onClick={() => toggleExtra(ex.name)} className="text-primary/60 hover:text-red-500">
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
+                              {sel && (
+                                <div className="flex items-center gap-2 pt-1 border-t border-primary/10">
+                                  <span className="text-[10px] text-muted-foreground uppercase font-medium">Qty:</span>
+                                  <Input 
+                                    type="number" 
+                                    min="1" 
+                                    value={qty} 
+                                    onChange={(e) => updateExtraQuantity(ex.name, Number(e.target.value))}
+                                    className="h-7 w-16 text-xs bg-white border-primary/20 focus:ring-primary/20"
+                                  />
+                                  <span className="ml-auto text-xs font-bold text-primary">₹{(ex.price * qty).toLocaleString("en-IN")}</span>
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -480,22 +530,44 @@ const AddEnquiry = () => {
                   )}
 
                   {activeExtrasEq.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Equipment</Label>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {activeExtrasEq.map((ex) => {
-                          const sel = selectedExtras.includes(ex.name);
+                          const selection = selectedExtras.find(s => (typeof s === "string" ? s === ex.name : s.name === ex.name));
+                          const sel = !!selection;
+                          const qty = typeof selection === "string" ? 1 : selection?.quantity || 1;
+                          
                           return (
-                            <button key={ex.id} type="button" onClick={() => toggleExtra(ex.name)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                                sel ? "bg-primary text-white border-primary" : "bg-white text-foreground border-border hover:border-primary/40"
-                              }`}>
-                              {ex.name}
-                              <span className={sel ? "text-white/70" : "text-muted-foreground"}>
-                                ₹{ex.price.toLocaleString("en-IN")}
-                              </span>
-                              {sel && <X className="h-3 w-3" />}
-                            </button>
+                            <div key={ex.id} className={`flex flex-col gap-2 p-2 rounded-xl border transition-all ${
+                              sel ? "bg-primary/5 border-primary shadow-sm" : "bg-white border-border hover:border-primary/40"
+                            }`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <button type="button" onClick={() => toggleExtra(ex.name)}
+                                  className={`flex-1 text-left text-xs font-semibold ${sel ? "text-primary" : "text-foreground"}`}>
+                                  {ex.name}
+                                  <p className="text-[10px] text-muted-foreground font-normal">₹{ex.price.toLocaleString("en-IN")} each</p>
+                                </button>
+                                {sel && (
+                                  <button type="button" onClick={() => toggleExtra(ex.name)} className="text-primary/60 hover:text-red-500">
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
+                              {sel && (
+                                <div className="flex items-center gap-2 pt-1 border-t border-primary/10">
+                                  <span className="text-[10px] text-muted-foreground uppercase font-medium">Qty:</span>
+                                  <Input 
+                                    type="number" 
+                                    min="1" 
+                                    value={qty} 
+                                    onChange={(e) => updateExtraQuantity(ex.name, Number(e.target.value))}
+                                    className="h-7 w-16 text-xs bg-white border-primary/20 focus:ring-primary/20"
+                                  />
+                                  <span className="ml-auto text-xs font-bold text-primary">₹{(ex.price * qty).toLocaleString("en-IN")}</span>
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -586,11 +658,15 @@ const AddEnquiry = () => {
                   <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Extras</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {selectedExtras.map((e) => (
-                        <span key={e} className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full">
-                          {e}
-                        </span>
-                      ))}
+                       {selectedExtras.map((e) => {
+                        const name = typeof e === "string" ? e : e.name;
+                        const qty = typeof e === "string" ? 1 : e.quantity;
+                        return (
+                          <span key={name} className="text-xs bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full">
+                            {name}{qty > 1 && ` x ${qty}`}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

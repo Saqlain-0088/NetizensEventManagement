@@ -143,19 +143,23 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(({ event }, 
         {(event.selectedExtras ?? []).length > 0 && (
           <CardSection title="Extras & Add-ons">
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-              {(event.selectedExtras ?? []).map((extra, i) => (
-                <div key={i} style={{
-                  background: "#EFF6FF",
-                  border: "1px solid #BFDBFE",
-                  borderRadius: "10px",
-                  padding: "10px 18px",
-                  color: "#1E40AF",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                }}>
-                  {extra}
-                </div>
-              ))}
+              {(event.selectedExtras ?? []).map((extra, i) => {
+                const name = typeof extra === "string" ? extra : extra.name;
+                const qty = typeof extra === "string" ? 1 : extra.quantity;
+                return (
+                  <div key={i} style={{
+                    background: "#EFF6FF",
+                    border: "1px solid #BFDBFE",
+                    borderRadius: "10px",
+                    padding: "10px 18px",
+                    color: "#1E40AF",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                  }}>
+                    {name}{qty > 1 && ` x ${qty}`}
+                  </div>
+                );
+              })}
             </div>
           </CardSection>
         )}
